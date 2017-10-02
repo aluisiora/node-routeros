@@ -1,0 +1,27 @@
+{
+  "name": "routeros-api",
+  "version": "0.0.1",
+  "description": "JavaScript Routerboard RouterOS API",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@10.62.201.18:aluisio.amaral/routeros-api.git"
+  },
+  "keywords": [
+    "routeros",
+    "routerboard",
+    "mikrotik"
+  ],
+  "author": "Aluisio Rodrigues Amaral",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/iconv-lite": "0.0.1",
+    "@types/node": "^8.0.31"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.4.19"
+  }
+}
