@@ -1,0 +1,5 @@
+{
+    "socket timeout": "Tempo esgotado após %d segundos",
+    "data on unregistered tag": "Recebido dados em uma tag não regitrada. Este é um erro nesta própria API e não deveria ter acontecido.",
+    "unknown reply": "Tentou processar uma responsta desconhecida: %s"
+}
