@@ -5,6 +5,7 @@ import { Receiver } from './Receiver';
 import { Transmitter } from './Transmitter';
 import { RosException } from '../RosException';
 import * as debug from 'debug';
+import i18n from '../locale';
 
 const info = debug('routeros-api:connector:connector:info');
 const error = debug('routeros-api:connector:connector:error');
@@ -111,24 +112,26 @@ export class Connector extends EventEmitter {
     private onEnd(): () => void {
         const $this = this;
         return () => {
-            $this.destroy();
             $this.emit('close', $this);
+            $this.destroy();
         };
     }
 
-    private onError(): (err: Error) => void {
+    private onError(): (err: any) => void {
         const $this = this;
-        return (err: Error) => {
-            $this.destroy();
+        return (err: any) => {
+            err = new RosException(err.errno, err);
+            error('Problem while trying to connect to %s. Error: %s', $this.host, err.message);
             $this.emit('error', err, $this);
+            $this.destroy();
         };
     }
 
     private onTimeout(): () => void {
         const $this = this;
         return () => {
+            $this.emit('timeout', new RosException('SOCKTMOUT', { seconds: $this.timeout}), $this);
             $this.destroy();
-            $this.emit('timeout', new RosException('SOCKTMOUT'), $this);
         };
     }
 

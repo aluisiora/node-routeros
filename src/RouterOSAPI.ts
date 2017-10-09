@@ -2,7 +2,7 @@ import { TlsOptions } from 'tls';
 import { Connector } from './connector/Connector';
 import { Channel } from './Channel';
 import { RosException } from './RosException';
-import * as i18n from 'i18n';
+import i18n from './locale';
 import * as crypto from 'crypto';
 import * as debug from 'debug';
 
@@ -39,9 +39,14 @@ export class RouterOSAPI {
         this.port     = options.port;
         this.timeout  = options.timeout;
         this.tls      = options.tls;
-        i18n.setLocale(options.locale || 'en');
+        i18n.changeLanguage(options.locale || 'en', (err?: Error) => {
+            if (err) throw err;
+        });
     }
 
+    /**
+     *
+     */
     public connect(): Promise<RouterOSAPI> {
         if (this.connecting) return;
         if (this.connected) return Promise.resolve(this);
@@ -130,6 +135,10 @@ export class RouterOSAPI {
             info('Credentials accepted on %s, we are connected', this.host);
             return Promise.resolve(this);
         }).catch((err: Error) => {
+            if (err.message === 'cannot log in') {
+                err = new RosException('CANTLOGIN');
+            }
+            this.connector.destroy();
             error('Couldn\'t loggin onto %s, Error: %O', this.host, err);
             return Promise.reject(err);
         });

@@ -4,6 +4,7 @@
         "module": "commonjs",
         "moduleResolution": "node",
         "declaration": true,
-        "outDir": "../dist/"     
+        "watch": true,
+        "outDir": "../dist/"
     }
 }

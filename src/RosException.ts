@@ -1,11 +1,12 @@
+import i18n from './locale';
+
 export class RosException extends Error {
 
     public errno: string;
-    public params: any[];
 
-    constructor(errno: string, ...params: any[]) {
+    constructor(errno: string, params?: any) {
         // Pass remaining arguments (including vendor specific ones) to parent constructor
-        super(...params);
+        super(i18n.t(errno, params));
 
         // Maintains proper stack trace for where our error was thrown
         Error.captureStackTrace(this, RosException);

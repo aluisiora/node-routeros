@@ -19,6 +19,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/debug": "0.0.30",
+    "@types/i18next": "^8.4.2",
     "@types/iconv-lite": "0.0.1",
     "@types/node": "^6.0.88",
     "mocha": "^4.0.1",
@@ -29,7 +30,8 @@
   },
   "dependencies": {
     "debug": "^3.1.0",
-    "i18n": "^0.8.3",
+    "i18next": "^9.1.0",
+    "i18next-sync-fs-backend": "^1.0.0",
     "iconv-lite": "^0.4.19"
   }
 }

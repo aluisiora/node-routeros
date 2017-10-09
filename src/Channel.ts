@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { Connector } from './connector/Connector';
-import * as i18n from 'i18n';
 import * as debug from 'debug';
+import i18n from './locale';
 
 const info = debug('routeros-api:channel:info');
 const error = debug('routeros-api:channel:error');
@@ -97,7 +97,7 @@ export class Channel extends EventEmitter {
     private onUnknown(): (reply: string) => void {
         const $this = this;
         return (reply: string) => {
-            throw new Error(i18n.__('unknown reply', reply));
+            throw new Error(i18n.t('UNKNOWNREPLY', { reply: reply }));
         };
     }
 
