@@ -13,3 +13,6 @@ Thumbs.db
 
 # Ignore built ts files
 dist/**/*
+
+# Temp files
+temp
