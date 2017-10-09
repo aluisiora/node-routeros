@@ -1,18 +1,20 @@
-declare const lang;
-
 import { EventEmitter } from 'events';
 import { Socket } from 'net';
 import { TLSSocket, TlsOptions } from 'tls';
-
 import { Receiver } from './Receiver';
 import { Transmitter } from './Transmitter';
+import { RosException } from '../RosException';
+import * as debug from 'debug';
 
-export interface IConnectorOptions {
-    host: string;
-    port?: number;
-    timeout?: number;
-    tls?: TlsOptions;
-}
+const info = debug('routeros-api:connector:connector:info');
+const error = debug('routeros-api:connector:connector:error');
+
+// interface IConnectorOptions {
+//     host: string;
+//     port?: number;
+//     timeout?: number;
+//     tls?: TlsOptions;
+// }
 
 export class Connector extends EventEmitter {
 
@@ -26,10 +28,11 @@ export class Connector extends EventEmitter {
 
     private connected: boolean  = false;
     private connecting: boolean = false;
+    private closing: boolean = false;
 
     private writesPool: Buffer[] = [];
 
-    constructor(options: IConnectorOptions) {
+    constructor(options: any) {
         super();
 
         this.socket      = new Socket();
@@ -44,11 +47,13 @@ export class Connector extends EventEmitter {
             this.socket = new TLSSocket(this.socket, options.tls);
         }
 
-        this.socket.once('connect', this.onConnect);
-        this.socket.once('end', this.onEnd);
-        this.socket.once('error', this.onError);
-        this.socket.once('timeout', this.onTimeout);
-        this.socket.once('fatal', this.onEnd);
+        this.socket.once('connect', this.onConnect());
+        this.socket.once('end', this.onEnd());
+        this.socket.once('timeout', this.onTimeout());
+        this.socket.once('fatal', this.onEnd());
+
+        this.socket.on('error', this.onError());
+        this.socket.on('data', this.onData());
 
         this.socket.setTimeout(this.timeout * 1000);
         this.socket.setKeepAlive(true);
@@ -68,7 +73,7 @@ export class Connector extends EventEmitter {
         for (const line of data) {
             this.transmitter.write(line);
         }
-        this.transmitter.write(String.fromCharCode(0));
+        this.transmitter.write(null);
         return this;
     }
 
@@ -81,11 +86,10 @@ export class Connector extends EventEmitter {
     }
 
     public close(): void {
-        this.socket.end();
-    }
-
-    public end(): void {
-        this.close();
+        if (!this.closing) {
+            this.closing = true;
+            this.socket.end();
+        }
     }
 
     public destroy(): void {
@@ -93,25 +97,47 @@ export class Connector extends EventEmitter {
         this.removeAllListeners();
     }
 
-    private onConnect(): void {
-        this.connecting  = false;
-        this.connected   = true;
-        this.emit('connected', this);
+    private onConnect(): () => void {
+        const $this = this;
+        return () => {
+            $this.connecting = false;
+            $this.connected = true;
+            info('Connected');
+            $this.transmitter.runPool();
+            $this.emit('connected', $this);
+        };
     }
 
-    private onEnd(): void {
-        this.destroy();
-        this.emit('close', this);
+    private onEnd(): () => void {
+        const $this = this;
+        return () => {
+            $this.destroy();
+            $this.emit('close', $this);
+        };
     }
 
-    private onError(e: Error): void {
-        this.destroy();
-        this.emit('error', e, this);
+    private onError(): (err: Error) => void {
+        const $this = this;
+        return (err: Error) => {
+            $this.destroy();
+            $this.emit('error', err, $this);
+        };
     }
 
-    private onTimeout(): void {
-        this.destroy();
-        this.emit('timeout', new Error(lang('socket timeout', this.timeout)), this);
+    private onTimeout(): () => void {
+        const $this = this;
+        return () => {
+            $this.destroy();
+            $this.emit('timeout', new RosException('SOCKTMOUT'), $this);
+        };
+    }
+
+    private onData(): (data: Buffer) => void {
+        const $this = this;
+        return (data: Buffer) => {
+            info('Got data from the socket, will process it');
+            $this.receiver.processRawData(data);
+        };
     }
 
 }

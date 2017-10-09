@@ -1,9 +1,14 @@
-import * as iconv from 'iconv-lite';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const iconv = require("iconv-lite");
+const debug = require("debug");
+const info = debug('routeros-api:connector:transmitter:info');
+const error = debug('routeros-api:connector:transmitter:error');
 /**
  * Class responsible for transmitting data over the
  * socket to the routerboard
  */
-export class Transmitter {
+class Transmitter {
     /**
      * Constructor
      *
@@ -15,7 +20,7 @@ export class Transmitter {
          */
         this.pool = [];
         this.socket = socket;
-        this.socket.once('connect', this.onConnected);
+        // this.socket.once('connect', this.onConnected);
     }
     /**
      * Write data over the socket, if it not writable yet,
@@ -24,6 +29,7 @@ export class Transmitter {
      * @param data
      */
     write(data) {
+        info('Writing command %s over the socket', data);
         const encodedData = this.encodeString(data);
         if (!this.socket.writable || this.pool.length > 0) {
             this.pool.push(encodedData);
@@ -32,16 +38,17 @@ export class Transmitter {
             this.socket.write(encodedData);
         }
     }
-    /**
-     * Callback upon socket connection
-     */
-    onConnected() {
-        this.runPool();
-    }
+    // /**
+    //  * Callback upon socket connection
+    //  */
+    // private onConnected(): void {
+    //     this.runPool();
+    // }
     /**
      * Writes all data stored in the pool
      */
     runPool() {
+        info('Running stacked command pool');
         let data;
         while (this.pool.length > 0) {
             data = this.pool.shift();
@@ -60,6 +67,8 @@ export class Transmitter {
      * @param str
      */
     encodeString(str) {
+        if (str === null)
+            return String.fromCharCode(0);
         const encoded = iconv.encode(str, 'win1252');
         let data;
         let len = encoded.length;
@@ -101,3 +110,4 @@ export class Transmitter {
         return data;
     }
 }
+exports.Transmitter = Transmitter;

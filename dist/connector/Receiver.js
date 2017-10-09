@@ -1,24 +1,34 @@
-import * as iconv from 'iconv-lite';
-export class Receiver {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const iconv = require("iconv-lite");
+const i18n = require("i18n");
+const debug = require("debug");
+const info = debug('routeros-api:connector:receiver:info');
+const error = debug('routeros-api:connector:receiver:error');
+class Receiver {
     constructor(socket) {
+        this.tags = new Map();
+        this.dataLength = 0;
+        this.currentLine = '';
+        this.currentReply = '';
+        this.currentTag = '';
+        this.currentPacket = [];
         this.socket = socket;
-        this.socket.on('data', this.onData);
     }
     read(tag, callback) {
+        info('Reader of %s tag is being set', tag);
         this.tags.set(tag, {
             name: tag,
             callback: callback
         });
     }
     stop(tag) {
+        info('Not reading from %s tag anymore', tag);
         this.tags.delete(tag);
-    }
-    onData(data) {
-        this.processRawData(data);
     }
     processRawData(data) {
         while (data.length > 0) {
-            if (this.dataLength) {
+            if (this.dataLength > 0) {
                 if (data.length <= this.dataLength) {
                     this.dataLength -= data.length;
                     this.currentLine += iconv.decode(data, 'win1252');
@@ -41,6 +51,7 @@ export class Receiver {
                     if (this.dataLength === 1 && data.equals(Buffer.from(null, 'ascii'))) {
                         this.dataLength = 0;
                         data = data.slice(1); // get rid of excess buffer
+                        info('recebeu buffer vazio');
                     }
                     this.processSentence(line, (data.length > 0));
                 }
@@ -57,6 +68,7 @@ export class Receiver {
         }
     }
     processSentence(line, hasMoreLines) {
+        info('Got sentence %s', line);
         if (!hasMoreLines && this.currentReply === '!fatal') {
             this.socket.emit('fatal');
             return;
@@ -65,26 +77,25 @@ export class Receiver {
             this.currentTag = line.substring(5);
         }
         else if (/^!/.test(line)) {
-            if (this.currentTag) {
+            if (this.currentTag)
                 this.sendTagData();
-            }
             this.currentPacket.push(line);
             this.currentReply = line;
         }
         else {
             this.currentPacket.push(line);
         }
-        if (!hasMoreLines) {
+        if (!hasMoreLines)
             this.sendTagData();
-        }
     }
     sendTagData() {
         const tag = this.tags.get(this.currentTag);
         if (tag) {
+            info('Sending to tag %s the packet %O', tag.name, this.currentPacket);
             tag.callback(this.currentPacket);
         }
         else {
-            throw new Error(lang('data on unregistered tag'));
+            throw new Error(i18n.__('data on unregistered tag'));
         }
         this.cleanUp();
     }
@@ -130,3 +141,4 @@ export class Receiver {
         };
     }
 }
+exports.Receiver = Receiver;

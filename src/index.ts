@@ -1,3 +1,3 @@
 import './bootstrap';
-
-export { RouterOSAPI } from './RouterOSAPI';
+import { RouterOSAPI } from './RouterOSAPI';
+module.exports = RouterOSAPI;

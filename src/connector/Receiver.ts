@@ -1,7 +1,10 @@
-declare const lang;
-
 import { Socket } from 'net';
 import * as iconv from 'iconv-lite';
+import * as i18n from 'i18n';
+import * as debug from 'debug';
+
+const info = debug('routeros-api:connector:receiver:info');
+const error = debug('routeros-api:connector:receiver:error');
 
 interface IReadCallback {
     name: string;
@@ -11,20 +14,20 @@ interface IReadCallback {
 export class Receiver {
 
     private socket: Socket;
-    private tags: Map<string, IReadCallback>;
+    private tags: Map<string, IReadCallback> = new Map();
 
-    private dataLength: number;
-    private currentLine: string;
-    private currentReply: string;
-    private currentTag: string;
-    private currentPacket: string[];
+    private dataLength: number = 0;
+    private currentLine: string = '';
+    private currentReply: string = '';
+    private currentTag: string = '';
+    private currentPacket: string[] = [];
 
     constructor(socket: Socket) {
         this.socket = socket;
-        this.socket.on('data', this.onData);
     }
 
     public read(tag: string, callback: (packet: string[]) => void): void {
+        info('Reader of %s tag is being set', tag);
         this.tags.set(tag, {
             name   : tag,
             callback : callback
@@ -32,16 +35,13 @@ export class Receiver {
     }
 
     public stop(tag: string): void {
+        info('Not reading from %s tag anymore', tag);
         this.tags.delete(tag);
     }
 
-    private onData(data: Buffer): void {
-        this.processRawData(data);
-    }
-
-    private processRawData(data: Buffer): void {
+    public processRawData(data: Buffer): void {
         while (data.length > 0) {
-            if (this.dataLength) {
+            if (this.dataLength > 0) {
                 if (data.length <= this.dataLength) {
                     this.dataLength -= data.length;
                     this.currentLine += iconv.decode(data, 'win1252');
@@ -63,6 +63,7 @@ export class Receiver {
                     if (this.dataLength === 1 && data.equals(Buffer.from(null, 'ascii'))) {
                         this.dataLength = 0;
                         data = data.slice(1); // get rid of excess buffer
+                        info('recebeu buffer vazio');
                     }
                     this.processSentence(line, (data.length > 0));
                 }
@@ -79,6 +80,8 @@ export class Receiver {
     }
 
     private processSentence(line: string, hasMoreLines: boolean): void {
+        info('Got sentence %s', line);
+
         if (!hasMoreLines && this.currentReply === '!fatal') {
             this.socket.emit('fatal');
             return;
@@ -87,26 +90,23 @@ export class Receiver {
         if (/\.tag=/.test(line)) {
             this.currentTag = line.substring(5);
         } else if (/^!/.test(line)) {
-            if (this.currentTag) {
-                this.sendTagData();
-            }
+            if (this.currentTag) this.sendTagData();
             this.currentPacket.push(line);
             this.currentReply = line;
         } else {
             this.currentPacket.push(line);
         }
 
-        if (!hasMoreLines) {
-            this.sendTagData();
-        }
+        if (!hasMoreLines) this.sendTagData();
     }
 
     private sendTagData(): void {
         const tag = this.tags.get(this.currentTag);
         if (tag) {
+            info('Sending to tag %s the packet %O', tag.name, this.currentPacket);
             tag.callback(this.currentPacket);
         } else {
-            throw new Error(lang('data on unregistered tag'));
+            throw new Error(i18n.__('data on unregistered tag'));
         }
         this.cleanUp();
     }

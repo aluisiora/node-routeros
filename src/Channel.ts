@@ -1,8 +1,10 @@
-declare const lang;
-
 import { EventEmitter } from 'events';
-
 import { Connector } from './connector/Connector';
+import * as i18n from 'i18n';
+import * as debug from 'debug';
+
+const info = debug('routeros-api:channel:info');
+const error = debug('routeros-api:channel:error');
 
 interface IRawPacket {
     packet: string[];
@@ -15,17 +17,15 @@ export class Channel extends EventEmitter {
     private id: string;
     private connector: Connector;
 
-    private data: any[];
+    private data: any[] = [];
     private trapped: boolean = false;
+    private streaming: boolean = false;
 
     constructor(connector) {
         super();
-        this.id = Math.random().toString(24);
+        this.id = Math.random().toString(36).substring(10, 26);
         this.connector = connector;
-
-        this.once('unknown', (reply) => {
-            throw new Error(lang('unknown reply', reply));
-        });
+        this.once('unknown', this.onUnknown());
     }
 
     public write(menu: string, params: string[]): Promise<object[]> {
@@ -57,9 +57,15 @@ export class Channel extends EventEmitter {
     private processPacket(packet: string[]): void {
         const reply = packet.shift();
 
+        info('Processing reply %s with data %o', reply, packet);
+
+        const parsed = this.parsePacket(packet);
+
+        if (packet.length > 0) this.emit('data', parsed);
+
         switch (reply) {
             case '!re':
-                this.emit('data', this.parsePacket(packet));
+                if (this.streaming) this.emit('stream', parsed);
                 break;
             case '!done':
                 if (this.trapped) this.emit('trap');
@@ -68,7 +74,7 @@ export class Channel extends EventEmitter {
                 break;
             case '!trap':
                 this.trapped = true;
-                this.data = [this.parsePacket(packet)];
+                this.data = [parsed];
                 break;
             default:
                 this.emit('unknown', reply);
@@ -84,7 +90,15 @@ export class Channel extends EventEmitter {
             linePair.shift(); // remove empty index
             obj[linePair.shift()] = linePair.join('=');
         }
+        info('Parsed line, got %o as result', obj);
         return obj;
+    }
+
+    private onUnknown(): (reply: string) => void {
+        const $this = this;
+        return (reply: string) => {
+            throw new Error(i18n.__('unknown reply', reply));
+        };
     }
 
 }

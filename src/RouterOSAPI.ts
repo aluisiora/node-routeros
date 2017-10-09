@@ -1,17 +1,22 @@
-declare const i18n;
-declare const lang;
-
 import { TlsOptions } from 'tls';
-
-import { Connector, IConnectorOptions } from './connector/Connector';
+import { Connector } from './connector/Connector';
 import { Channel } from './Channel';
-
+import { RosException } from './RosException';
+import * as i18n from 'i18n';
 import * as crypto from 'crypto';
+import * as debug from 'debug';
 
-interface IRouterOSAPIOptions extends IConnectorOptions {
-    user: string;
-    password?: string;
-}
+const info = debug('routeros-api:api:info');
+const error = debug('routeros-api:api:error');
+
+// interface IRouterOSAPIOptions {
+//     host: string;
+//     port?: number;
+//     timeout?: number;
+//     tls?: TlsOptions;
+//     user: string;
+//     password?: string;
+// }
 
 export class RouterOSAPI {
 
@@ -23,28 +28,32 @@ export class RouterOSAPI {
     public tls: TlsOptions;
     public connected: boolean  = false;
     public connecting: boolean = false;
-    public status: string;
+    public closing: boolean = false;
 
     private connector: Connector;
 
-    constructor(options: IRouterOSAPIOptions) {
+    constructor(options: any) {
         this.host     = options.host;
         this.user     = options.user;
         this.password = options.password;
         this.port     = options.port;
         this.timeout  = options.timeout;
         this.tls      = options.tls;
+        i18n.setLocale(options.locale || 'en');
     }
 
     public connect(): Promise<RouterOSAPI> {
         if (this.connecting) return;
         if (this.connected) return Promise.resolve(this);
 
+        info('Connecting on %s', this.host);
+
         this.connecting = true;
         this.connected = false;
 
         if (this.connector) {
-            this.connector.close();
+            info('Already had a connector object, going to purge and recreate it');
+            this.connector.destroy();
             delete this.connector;
         }
 
@@ -60,8 +69,9 @@ export class RouterOSAPI {
                 this.login().then(() => {
                     this.connecting = false;
                     this.connected = true;
+                    info('Logged in on %s', this.host);
                     resolve(this);
-                }, (e: Error) => {
+                }).catch((e: Error) => {
                     this.connecting = false;
                     this.connected = false;
                     reject(e);
@@ -69,7 +79,7 @@ export class RouterOSAPI {
             });
             this.connector.once('error', (e: Error) => reject(e));
             this.connector.once('timeout', (e: Error) => reject(e));
-            this.connector.once('close', (e: Error) => reject(e));
+
             this.connector.connect();
         });
     }
@@ -80,8 +90,20 @@ export class RouterOSAPI {
         return chann.write(menu, params);
     }
 
-    public setLocale(locale: string): void {
-        i18n.setLocale(locale);
+    public close(): Promise<RouterOSAPI> {
+        if (this.closing) {
+            return Promise.reject(new RosException('ALRDYCLOSNG'));
+        }
+
+        if (!this.connected) {
+            return Promise.resolve(this);
+        }
+
+        return new Promise((resolve) => {
+            this.closing = true;
+            this.connector.close();
+            this.connector.once('close', () => resolve(this));
+        });
     }
 
     private openChannel(): Channel {
@@ -90,16 +112,25 @@ export class RouterOSAPI {
 
     private login(): Promise<RouterOSAPI> {
         this.connecting = true;
+        info('Sending login to %s, waiting for challenge', this.host);
         return this.write('/login').then((data: object) => {
+            info('Received challenge on %s, will send credentials. Data: %o', this.host, data);
+
             const challenge = new Buffer(this.password.length + 17);
             const challengeOffset = this.password.length + 1;
-            challenge.write(String.fromCharCode(0) + this.password, 0);
-            challenge.write(data[0].ret, challengeOffset, data[0].ret - challengeOffset, 'hex');
+            const ret = data[0].ret;
+
+            challenge.write(String.fromCharCode(0) + this.password);
+            challenge.write(ret, challengeOffset, ret.length - challengeOffset, 'hex');
+
             const resp = '00' + crypto.createHash('MD5').update(challenge).digest('hex');
+
             return this.write('/login', ['=name=' + this.user, '=response=' + resp]);
         }).then(() => {
+            info('Credentials accepted on %s, we are connected', this.host);
             return Promise.resolve(this);
         }).catch((err: Error) => {
+            error('Couldn\'t loggin onto %s, Error: %O', this.host, err);
             return Promise.reject(err);
         });
     }

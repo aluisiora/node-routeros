@@ -11,6 +11,8 @@
         "no-bitwise": false,
         "curly": false,
         "ordered-imports": false,
+        "max-line-length": false,
+        "no-shadowed-variable": false,
         "quotemark": [true, "single", "avoid-escape", "avoid-template"]
     },
     "rulesDirectory": []

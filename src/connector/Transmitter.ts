@@ -1,5 +1,9 @@
 import { Socket } from 'net';
 import * as iconv from 'iconv-lite';
+import * as debug from 'debug';
+
+const info = debug('routeros-api:connector:transmitter:info');
+const error = debug('routeros-api:connector:transmitter:error');
 
 /**
  * Class responsible for transmitting data over the
@@ -24,7 +28,7 @@ export class Transmitter {
      */
     constructor(socket: Socket) {
         this.socket = socket;
-        this.socket.once('connect', this.onConnected);
+        // this.socket.once('connect', this.onConnected);
     }
 
     /**
@@ -34,6 +38,7 @@ export class Transmitter {
      * @param data
      */
     public write(data: string): void {
+        info('Writing command %s over the socket', data);
         const encodedData = this.encodeString(data);
         if (!this.socket.writable || this.pool.length > 0) {
             this.pool.push(encodedData);
@@ -42,17 +47,18 @@ export class Transmitter {
         }
     }
 
-    /**
-     * Callback upon socket connection
-     */
-    private onConnected(): void {
-        this.runPool();
-    }
+    // /**
+    //  * Callback upon socket connection
+    //  */
+    // private onConnected(): void {
+    //     this.runPool();
+    // }
 
     /**
      * Writes all data stored in the pool
      */
-    private runPool(): void {
+    public runPool(): void {
+        info('Running stacked command pool');
         let data;
         while (this.pool.length > 0) {
             data = this.pool.shift();
@@ -72,6 +78,8 @@ export class Transmitter {
      * @param str
      */
     private encodeString(str: string): string {
+        if (str === null) return String.fromCharCode(0);
+
         const encoded = iconv.encode(str, 'win1252');
 
         let data;

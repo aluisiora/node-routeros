@@ -1,13 +1,19 @@
-import { EventEmitter } from 'events';
-export class Channel extends EventEmitter {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const events_1 = require("events");
+const i18n = require("i18n");
+const debug = require("debug");
+const info = debug('routeros-api:channel:info');
+const error = debug('routeros-api:channel:error');
+class Channel extends events_1.EventEmitter {
     constructor(connector) {
         super();
+        this.data = [];
         this.trapped = false;
-        this.id = Math.random().toString(24);
+        this.streaming = false;
+        this.id = Math.random().toString(36).substring(10, 26);
         this.connector = connector;
-        this.once('unknown', (reply) => {
-            throw new Error(lang('unknown reply', reply));
-        });
+        this.once('unknown', this.onUnknown());
     }
     write(menu, params) {
         params = [menu].concat(params);
@@ -32,9 +38,14 @@ export class Channel extends EventEmitter {
     }
     processPacket(packet) {
         const reply = packet.shift();
+        info('Processing reply %s with data %o', reply, packet);
+        const parsed = this.parsePacket(packet);
+        if (packet.length > 0)
+            this.emit('data', parsed);
         switch (reply) {
             case '!re':
-                this.emit('data', this.parsePacket(packet));
+                if (this.streaming)
+                    this.emit('stream', parsed);
                 break;
             case '!done':
                 if (this.trapped)
@@ -45,7 +56,7 @@ export class Channel extends EventEmitter {
                 break;
             case '!trap':
                 this.trapped = true;
-                this.data = [this.parsePacket(packet)];
+                this.data = [parsed];
                 break;
             default:
                 this.emit('unknown', reply);
@@ -60,6 +71,14 @@ export class Channel extends EventEmitter {
             linePair.shift(); // remove empty index
             obj[linePair.shift()] = linePair.join('=');
         }
+        info('Parsed line, got %o as result', obj);
         return obj;
     }
+    onUnknown() {
+        const $this = this;
+        return (reply) => {
+            throw new Error(i18n.__('unknown reply', reply));
+        };
+    }
 }
+exports.Channel = Channel;
