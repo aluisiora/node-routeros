@@ -1,5 +1,8 @@
 import i18n from './locale';
 
+/**
+ * RouterOS Exception Handler
+ */
 export class RosException extends Error {
 
     public errno: string;

@@ -10,7 +10,7 @@ i18n
         fallbackLng: 'en',
         backend: {
             loadPath: normalize(__dirname + '/../locales/{{lng}}.json'),
-            addPath: normalize(__dirname + '/../locales/{{lng}}.json'),
+            addPath: normalize(__dirname + '/../locales/{{lng}}.missing.json'),
             jsonIndent: 2
         }
     });

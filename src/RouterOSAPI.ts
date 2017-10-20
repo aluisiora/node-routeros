@@ -9,15 +9,6 @@ import * as debug from 'debug';
 const info = debug('routeros-api:api:info');
 const error = debug('routeros-api:api:error');
 
-// interface IRouterOSAPIOptions {
-//     host: string;
-//     port?: number;
-//     timeout?: number;
-//     tls?: TlsOptions;
-//     user: string;
-//     password?: string;
-// }
-
 export class RouterOSAPI {
 
     public host: string;
@@ -39,9 +30,11 @@ export class RouterOSAPI {
         this.port     = options.port;
         this.timeout  = options.timeout;
         this.tls      = options.tls;
-        i18n.changeLanguage(options.locale || 'en', (err?: Error) => {
-            if (err) throw err;
-        });
+        if (options.locale && options.locale !== 'en') {
+            i18n.changeLanguage(options.locale, (err?: Error) => {
+                if (err) throw err;
+            });
+        }
     }
 
     /**
@@ -89,10 +82,19 @@ export class RouterOSAPI {
         });
     }
 
-    public write(menu: string, params: string[] = []): Promise<object[]> {
+    public write(params: string | string[], params2: string[] = []): Promise<object[]> {
+        if (typeof params === 'string') params = [params];
+        params = params.concat(params2);
+        let chann = this.openChannel(); // let instead of const forces garbage colletor to destroy the object when set to null
+        chann.on('close', () => { chann = null; });
+        return chann.write(params);
+    }
+
+    public stream(params: string | string[] = [], callback: (err: Error, packet?: any) => void): any {
+        if (typeof params === 'string') params = [params];
         let chann = this.openChannel();
         chann.on('close', () => { chann = null; });
-        return chann.write(menu, params);
+        return chann.stream(params, callback);
     }
 
     public close(): Promise<RouterOSAPI> {

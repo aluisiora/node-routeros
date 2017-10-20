@@ -1,26 +1,51 @@
 import { EventEmitter } from 'events';
 import { Connector } from './connector/Connector';
+import { Stream } from './Stream';
+import { RosException } from './RosException';
 import * as debug from 'debug';
 import i18n from './locale';
 
 const info = debug('routeros-api:channel:info');
 const error = debug('routeros-api:channel:error');
 
-interface IRawPacket {
-    packet: string[];
-    data: (packet: string[]) => {};
-    trap: (packet: string[]) => {};
-}
-
+/**
+ * Channel class is responsible for generating
+ * ids for the channels and writing over
+ * the ids generated, while listening for
+ * their responses
+ */
 export class Channel extends EventEmitter {
 
+    /**
+     * Id of the channel
+     */
     private id: string;
+
+    /**
+     * The connector object
+     */
     private connector: Connector;
 
+    /**
+     * Data received related to the channel
+     */
     private data: any[] = [];
+
+    /**
+     * If received a trap instead of a positive response
+     */
     private trapped: boolean = false;
+
+    /**
+     * If is streaming content
+     */
     private streaming: boolean = false;
 
+    /**
+     * Constructor
+     * 
+     * @param connector 
+     */
     constructor(connector) {
         super();
         this.id = Math.random().toString(36).substring(10, 26);
@@ -28,25 +53,50 @@ export class Channel extends EventEmitter {
         this.once('unknown', this.onUnknown());
     }
 
-    public write(menu: string, params: string[]): Promise<object[]> {
-        params = [menu].concat(params);
+    get Id(): string {
+        return this.id;
+    }
+
+    get Connector(): Connector {
+        return this.connector;
+    }
+
+    /**
+     * Organize the data to be written over the socket with the id
+     * generated. Adds a reader to the id provided, so we wait for
+     * the data.
+     * 
+     * @param params 
+     */
+    public write(params: string[]): Promise<object[]> {
+        if (this.streaming) return Promise.reject(new RosException('CANTWRTWHLSTRMG'));
+        
         params.push('.tag=' + this.id);
 
         this.on('data', (packet: object) => this.data.push(packet));
 
         return new Promise((resolve, reject) => {
-            this.once('done', () => {
-                resolve(this.data);
+            this.once('done', (data) => {
+                resolve(data);
             });
-            this.once('trap', () => {
-                reject(new Error(this.data[0].message));
+            this.once('trap', (data) => {
+                reject(new Error(data.message));
             });
 
-            this.connector.read(this.id, (packet: string[]) => this.processPacket(packet));
-            this.connector.write(params);
+            this.readAndWrite(params);
         });
     }
 
+    public stream(params: string[], callback: (err: Error, packet?: any) => void): Stream {
+        this.streaming = true;
+        params.push('.tag=' + this.id);
+        return new Stream(this, params, callback);
+    }
+
+    /**
+     * Closes the channel, algo asking for
+     * the connector to remove the reader.
+     */
     public close(): void {
         this.emit('close');
         this.removeAllListeners();
@@ -54,6 +104,26 @@ export class Channel extends EventEmitter {
         return;
     }
 
+    /**
+     * Register the reader for the tag and write the params over
+     * the socket
+     * 
+     * @param params 
+     */
+    private readAndWrite(params: string[]): void {
+        this.connector.read(this.id, (packet: string[]) => this.processPacket(packet));
+        this.connector.write(params);
+    }
+
+    /**
+     * Process the data packet received to
+     * figure out the answer to give to the
+     * channel listener, either if it's just
+     * the data we were expecting or if
+     * a trap was given.
+     * 
+     * @param packet 
+     */
     private processPacket(packet: string[]): void {
         const reply = packet.shift();
 
@@ -61,15 +131,15 @@ export class Channel extends EventEmitter {
 
         const parsed = this.parsePacket(packet);
 
-        if (packet.length > 0) this.emit('data', parsed);
+        if (packet.length > 0 && !this.streaming) this.emit('data', parsed);
 
         switch (reply) {
             case '!re':
                 if (this.streaming) this.emit('stream', parsed);
                 break;
             case '!done':
-                if (this.trapped) this.emit('trap');
-                else this.emit('done');
+                if (this.trapped) this.emit('trap', this.data[0]);
+                else this.emit('done', this.data);
                 this.close();
                 break;
             case '!trap':
@@ -83,6 +153,12 @@ export class Channel extends EventEmitter {
         }
     }
 
+    /**
+     * Parse the packet line, separating the key from the data.
+     * Ex: transform '=interface=ether2' into object {interface:'ether2'}
+     * 
+     * @param packet 
+     */
     private parsePacket(packet: string[]): object {
         const obj = {};
         for (const line of packet) {
@@ -94,6 +170,11 @@ export class Channel extends EventEmitter {
         return obj;
     }
 
+    /**
+     * Waits for the unknown event.
+     * It shouldn't happen, but if it does, throws the error and
+     * stops the channel
+     */
     private onUnknown(): (reply: string) => void {
         const $this = this;
         return (reply: string) => {

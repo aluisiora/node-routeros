@@ -1,17 +1,21 @@
 const should = require('should');
-const assert = require('assert');
 const RouterOSAPI = require('../dist/index');
+const config = {
+    address: '10.62.0.92',
+    username: 'admin',
+    password: 'admin',
+    port: 8728
+};
 
 describe('RouterOSAPI', function() {
-    
     
     describe('#connect()', () => {
 
         it('should connect normally 192.168.88.1', () => {
             const conn = new RouterOSAPI({
-                host: '192.168.88.1',
-                user: 'admin',
-                password: 'senhas'
+                host: config.address,
+                user: config.username,
+                password: config.password
             });
 
             conn.connect().then(() => {
@@ -23,8 +27,8 @@ describe('RouterOSAPI', function() {
 
         it('should reject wrong password', (done) => {
             const conn = new RouterOSAPI({
-                host: '192.168.88.1',
-                user: 'admin',
+                host: config.address,
+                user: config.username,
                 password: 'wrongpass'
             });
 
@@ -42,24 +46,24 @@ describe('RouterOSAPI', function() {
 
             const conn = new RouterOSAPI({
                 host: '192.168.88.2',
-                user: 'admin',
-                password: 'senhas'
+                user: config.username,
+                password: config.password
             });
 
             conn.connect().then(() => {
                 should.fail();
                 done();
             }).catch((err) => {
-                should(err.errno).equal('EHOSTUNREACH');
+                should(err.errno).be.oneOf('EHOSTUNREACH', 'ECONNREFUSED');
                 done();
             });
         });
 
         it('should refuse connection from port 666', function(done){
             const conn = new RouterOSAPI({
-                host: '192.168.88.1',
-                user: 'admin',
-                password: 'senhas',
+                host: config.address,
+                user: config.username,
+                password: config.password,
                 port: 666
             });
 
@@ -67,7 +71,7 @@ describe('RouterOSAPI', function() {
                 should.fail();
                 done();
             }).catch((err) => {
-                should(err.errno).equal('ECONNREFUSED');
+                should(err.errno).be.oneOf('EHOSTUNREACH', 'ECONNREFUSED');
                 done();
             });
         });

@@ -28,7 +28,6 @@ export class Transmitter {
      */
     constructor(socket: Socket) {
         this.socket = socket;
-        // this.socket.once('connect', this.onConnected);
     }
 
     /**
@@ -46,13 +45,6 @@ export class Transmitter {
             this.socket.write(encodedData);
         }
     }
-
-    // /**
-    //  * Callback upon socket connection
-    //  */
-    // private onConnected(): void {
-    //     this.runPool();
-    // }
 
     /**
      * Writes all data stored in the pool
@@ -74,6 +66,7 @@ export class Transmitter {
      * are displayed correctly when opened with winbox.
      *
      * Credits for George Joseph: https://github.com/gtjoseph
+     * and for Brandon Myers: https://github.com/Trakkasure
      *
      * @param str
      */
