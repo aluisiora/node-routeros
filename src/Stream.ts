@@ -14,8 +14,9 @@ export class Stream extends EventEmitter {
 
     private streaming: boolean = true;
     private pausing: boolean   = false;
+    private paused: boolean    = false;
     private stopping: boolean  = false;
-    private open: boolean      = true;
+    private stopped: boolean   = false;
 
     constructor(channel: Channel, params: string[], callback?: (err: Error, packet?: any) => void) {
         super();
@@ -23,7 +24,7 @@ export class Stream extends EventEmitter {
         this.params   = params;
         this.callback = callback;
 
-        this.channel.on('close', () => { this.open = false; });
+        this.channel.on('close', () => { this.stopped = false; });
         this.channel.on('stream', this.onStream());
 
         this.start();
@@ -34,7 +35,7 @@ export class Stream extends EventEmitter {
     }
 
     public resume(): Promise<void> {
-        if (!this.open) return Promise.reject(new RosException('STREAMCLOSD'));
+        if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
 
         if (!this.streaming) {
             this.pausing = false;
@@ -45,23 +46,30 @@ export class Stream extends EventEmitter {
     }
 
     public pause(): Promise<void> {
-        if (!this.open) return Promise.reject(new RosException('STREAMCLOSD'));
+        if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
 
         if (this.streaming) {
             this.pausing = true;
-            return this.stop();
+            return this.stop().then(() => {
+                this.pausing = false;
+                this.paused = true;
+                return Promise.resolve();
+            }).catch((err) => {
+                return Promise.reject(err);
+            });
         }
 
         return Promise.resolve();
     }
 
     public stop(): Promise<void> {
-        if (!this.open) return Promise.reject(new RosException('STREAMCLOSD'));
+        if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
+        if (!this.pausing) this.stopping = true;
         let chann = new Channel(this.channel.Connector);
         chann.on('close', () => { chann = null; });
         return chann.write(['/cancel', '=tag=' + this.channel.Id]).then(() => {
             this.streaming = false;
-            if (!this.pausing) this.open = false;
+            if (!this.pausing) this.stopped = true;
             return Promise.resolve();
         }).catch((err: Error) => {
             return Promise.reject(err);
@@ -73,9 +81,12 @@ export class Stream extends EventEmitter {
     }
 
     private start(): void {
-        this.channel.write(this.params.slice())
-            .then(this.onDone())
-            .catch(this.onTrap());
+        if (!this.stopped && !this.stopping) {
+            info('veio aqui');
+            this.channel.write(this.params.slice(), true)
+                .then(this.onDone())
+                .catch(this.onTrap());
+        }
     }
 
     private onStream(): (packet: any) => void {
@@ -98,7 +109,7 @@ export class Stream extends EventEmitter {
     private onDone(): () => void {
         return () => {
             if (this.channel) this.channel.close();
-            if (!this.pausing)  this.open = false;
+            if (!this.pausing)  this.stopped = false;
         };
     }
 }
