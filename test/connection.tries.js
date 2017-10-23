@@ -76,7 +76,7 @@ describe('RouterOSAPI', function() {
             });
         });
 
-        it('should keep alive for 30 seconds and then close', function(){
+        it('should keep alive for 30 seconds and then close', function(done){
             this.timeout(35000);
 
             const conn = new RouterOSAPI({

@@ -69,7 +69,7 @@ export class Connector extends EventEmitter {
     /**
      * Constructor which receive the options of the connection
      * 
-     * @param options 
+     * @param {Object} options 
      */
     constructor(options: any) {
         super();
@@ -100,6 +100,8 @@ export class Connector extends EventEmitter {
 
     /**
      * Connect to the routerboard
+     * 
+     * @returns {Connector}
      */
     public connect(): Connector {
         if (!this.connected) {
@@ -114,7 +116,8 @@ export class Connector extends EventEmitter {
     /**
      * Writes data through the open socket
      * 
-     * @param data 
+     * @param {Array} data 
+     * @returns {Connector}
      */
     public write(data: string[]): Connector {
         for (const line of data) {
@@ -127,8 +130,8 @@ export class Connector extends EventEmitter {
     /**
      * Register a tag to receive data
      * 
-     * @param tag 
-     * @param callback 
+     * @param {string} tag 
+     * @param {function} callback 
      */
     public read(tag: string, callback: (packet: string[]) => void): void {
         this.receiver.read(tag, callback);
@@ -136,7 +139,7 @@ export class Connector extends EventEmitter {
 
     /**
      * Unregister a tag, so it no longer waits for data
-     * @param tag 
+     * @param {string} tag 
      */
     public stopRead(tag: string): void {
         this.receiver.stop(tag);
@@ -167,6 +170,8 @@ export class Connector extends EventEmitter {
      * After the connection is stablished,
      * ask the transmitter to run any
      * command stored over the pool
+     * 
+     * @returns {function}
      */
     private onConnect(): () => void {
         const $this = this;
@@ -183,6 +188,8 @@ export class Connector extends EventEmitter {
      * Socket end event listener.
      * Terminates the connection after
      * the socket is released
+     * 
+     * @returns {function}
      */
     private onEnd(): () => void {
         const $this = this;
@@ -196,6 +203,8 @@ export class Connector extends EventEmitter {
      * Socket error event listener.
      * Emmits the error while trying to connect and
      * destroys the socket.
+     * 
+     * @returns {function}
      */
     private onError(): (err: any) => void {
         const $this = this;
@@ -210,6 +219,8 @@ export class Connector extends EventEmitter {
     /**
      * Socket timeout event listener
      * Emmits timeout error and destroys the socket
+     * 
+     * @returns {function}
      */
     private onTimeout(): () => void {
         const $this = this;
@@ -222,6 +233,8 @@ export class Connector extends EventEmitter {
     /**
      * Socket data event listener
      * Receives the data and sends it to processing
+     * 
+     * @returns {function}
      */
     private onData(): (data: Buffer) => void {
         const $this = this;

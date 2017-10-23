@@ -10,22 +10,79 @@ import * as debug from 'debug';
 const info = debug('routeros-api:api:info');
 const error = debug('routeros-api:api:error');
 
+/**
+ * The main class of this npm package, this is the class that will
+ * be exposed when importing or requiring.
+ * The main use of this class is to choose when to connect and
+ * write data.
+ */
 export class RouterOSAPI {
 
+    /**
+     * Host to connect
+     */
     public host: string;
+
+    /**
+     * Username to use
+     */
     public user: string;
+
+    /**
+     * Password of the username
+     */
     public password: string;
+
+    /**
+     * Port of the API
+     */
     public port: number;
+
+    /**
+     * Timeout of the connection
+     */
     public timeout: number;
+
+    /**
+     * TLS Options to use, if any
+     */
     public tls: TlsOptions;
+
+    /**
+     * Connected flag
+     */
     public connected: boolean  = false;
+
+    /**
+     * Connecting flag
+     */
     public connecting: boolean = false;
+
+    /**
+     * Closing flag
+     */
     public closing: boolean = false;
+
+    /**
+     * Keep connection alive
+     */
     public keepalive: boolean;
     
+    /**
+     * The connector which will be used
+     */
     private connector: Connector;
+
+    /**
+     * The function timeout that will keep the connection alive
+     */
     private keptaliveby: NodeJS.Timer;
 
+    /**
+     * Constructor, also sets the language of the thrown errors
+     * 
+     * @param {Object} options 
+     */
     constructor(options: any) {
         this.host      = options.host;
         this.user      = options.user;
@@ -42,7 +99,63 @@ export class RouterOSAPI {
     }
 
     /**
-     *
+     * Set host
+     * 
+     * @param {string} host
+     */
+    set Host(host: string) {
+        this.host = host;
+    }
+
+    /**
+     * Set username
+     * 
+     * @param {string} user
+     */
+    set User(user: string) {
+        this.user = user;
+    }
+
+    /**
+     * Set password
+     * 
+     * @param {string} password
+     */
+    set Password(password: string) {
+        this.password = password;
+    }
+
+    /**
+     * Set port
+     * 
+     * @param {number} port
+     */
+    set Port(port: number) {
+        this.port = port;
+    }
+
+    /**
+     * Set timeout
+     * 
+     * @param {number} timeout
+     */
+    set Timeout(timeout: number) {
+        this.timeout = timeout;
+    }
+
+    /**
+     * Set TLS
+     * 
+     * @param {TlsOptions} tls
+     */
+    set Tls(tls: TlsOptions) {
+        this.tls = tls;
+    }
+
+    /**
+     * Tries a connection to the routerboard with the provided credentials
+     * 
+     * @returns {Promise}
      */
     public connect(): Promise<RouterOSAPI> {
         if (this.connecting) return;
@@ -87,6 +200,14 @@ export class RouterOSAPI {
         });
     }
 
+    /**
+     * Writes a command over the socket to the routerboard
+     * on a new channel
+     * 
+     * @param {string|Array} params 
+     * @param {Array} params2
+     * @returns {Promise}
+     */
     public write(params: string | string[], params2: string[] = []): Promise<object[]> {
         if (typeof params === 'string') params = [params];
         params = params.concat(params2);
@@ -95,11 +216,26 @@ export class RouterOSAPI {
         return chann.write(params);
     }
 
+    /**
+     * Returns a stream object for handling continuous data
+     * flow.
+     * 
+     * @param {string|Array} params 
+     * @param {function} callback 
+     * @returns {Stream}
+     */
     public stream(params: string | string[] = [], callback: (err: Error, packet?: any) => void): Stream {
         if (typeof params === 'string') params = [params];
         return new Stream(this.openChannel(), params, callback);
     }
 
+    /**
+     * Keep the connection alive by running a set of
+     * commands provided instead of the random command
+     * 
+     * @param {string|Array} params 
+     * @param {function} callback 
+     */
     public keepaliveBy(params: string | string[] = [], callback?: (err: Error, packet?: any) => void): void {
         if (this.keptaliveby) clearTimeout(this.keptaliveby);
 
@@ -122,6 +258,13 @@ export class RouterOSAPI {
         exec();
     }
 
+    /**
+     * Closes the connection.
+     * It can be openned again without recreating
+     * an object from this class.
+     * 
+     * @returns {Promise}
+     */
     public close(): Promise<RouterOSAPI> {
         if (this.closing) {
             return Promise.reject(new RosException('ALRDYCLOSNG'));
@@ -138,10 +281,22 @@ export class RouterOSAPI {
         });
     }
 
+    /**
+     * Opens a new channel either for just writing or streaming
+     * 
+     * @returns {Channel}
+     */
     private openChannel(): Channel {
         return new Channel(this.connector);
     }
 
+    /**
+     * Login on the routerboard to provide
+     * api functionalities, using the credentials
+     * provided.
+     * 
+     * @returns {Promise}
+     */
     private login(): Promise<RouterOSAPI> {
         this.connecting = true;
         info('Sending login to %s, waiting for challenge', this.host);

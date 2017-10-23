@@ -34,7 +34,7 @@ export class Transmitter {
      * Write data over the socket, if it not writable yet,
      * save over the pool to be ran after
      *
-     * @param data
+     * @param {string} data
      */
     public write(data: string): void {
         info('Writing command %s over the socket', data);
@@ -68,7 +68,7 @@ export class Transmitter {
      * Credits for George Joseph: https://github.com/gtjoseph
      * and for Brandon Myers: https://github.com/Trakkasure
      *
-     * @param str
+     * @param {string} str
      */
     private encodeString(str: string): string {
         if (str === null) return String.fromCharCode(0);

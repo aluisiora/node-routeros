@@ -43,7 +43,7 @@ export class Channel extends EventEmitter {
     /**
      * Constructor
      * 
-     * @param connector 
+     * @param {Connector} connector 
      */
     constructor(connector) {
         super();
@@ -52,10 +52,20 @@ export class Channel extends EventEmitter {
         this.once('unknown', this.onUnknown());
     }
 
+    /**
+     * Get the id of the channel
+     * 
+     * @returns {string}
+     */
     get Id(): string {
         return this.id;
     }
 
+    /**
+     * Get the connector used in the channel
+     * 
+     * @returns {Connector}
+     */
     get Connector(): Connector {
         return this.connector;
     }
@@ -65,7 +75,8 @@ export class Channel extends EventEmitter {
      * generated. Adds a reader to the id provided, so we wait for
      * the data.
      * 
-     * @param params 
+     * @param {Array} params
+     * @returns {Promise}
      */
     public write(params: string[], isStream = false): Promise<object[]> {
         this.streaming = isStream;
@@ -89,6 +100,10 @@ export class Channel extends EventEmitter {
     /**
      * Closes the channel, algo asking for
      * the connector to remove the reader.
+     * If streaming, not forcing will only stop
+     * the reader, not the listeners of the events
+     * 
+     * @param {boolean} force - force closing by removing all listeners
      */
     public close(force = false): void {
         this.emit('close');
@@ -96,14 +111,13 @@ export class Channel extends EventEmitter {
             this.removeAllListeners();
         }
         this.connector.stopRead(this.id);
-        return;
     }
 
     /**
      * Register the reader for the tag and write the params over
      * the socket
      * 
-     * @param params 
+     * @param {Array} params 
      */
     private readAndWrite(params: string[]): void {
         this.connector.read(this.id, (packet: string[]) => this.processPacket(packet));
@@ -117,7 +131,7 @@ export class Channel extends EventEmitter {
      * the data we were expecting or if
      * a trap was given.
      * 
-     * @param packet 
+     * @param {Array} packet 
      */
     private processPacket(packet: string[]): void {
         const reply = packet.shift();
@@ -152,7 +166,8 @@ export class Channel extends EventEmitter {
      * Parse the packet line, separating the key from the data.
      * Ex: transform '=interface=ether2' into object {interface:'ether2'}
      * 
-     * @param packet 
+     * @param {Array} packet 
+     * @return {Object}
      */
     private parsePacket(packet: string[]): object {
         const obj = {};
@@ -169,6 +184,9 @@ export class Channel extends EventEmitter {
      * Waits for the unknown event.
      * It shouldn't happen, but if it does, throws the error and
      * stops the channel
+     * 
+     * @param {string} reply
+     * @returns {function}
      */
     private onUnknown(): (reply: string) => void {
         const $this = this;
