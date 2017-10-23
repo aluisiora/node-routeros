@@ -21,16 +21,19 @@ export class RouterOSAPI {
     public connected: boolean  = false;
     public connecting: boolean = false;
     public closing: boolean = false;
-
+    public keepalive: boolean;
+    
     private connector: Connector;
+    private keptaliveby: NodeJS.Timer;
 
     constructor(options: any) {
-        this.host     = options.host;
-        this.user     = options.user;
-        this.password = options.password;
-        this.port     = options.port;
-        this.timeout  = options.timeout;
-        this.tls      = options.tls;
+        this.host      = options.host;
+        this.user      = options.user;
+        this.password  = options.password;
+        this.port      = options.port || 8728;
+        this.timeout   = options.timeout || 10;
+        this.tls       = options.tls;
+        this.keepalive = options.keepalive || false;
         if (options.locale && options.locale !== 'en') {
             i18n.changeLanguage(options.locale, (err?: Error) => {
                 if (err) throw err;
@@ -68,6 +71,7 @@ export class RouterOSAPI {
                 this.login().then(() => {
                     this.connecting = false;
                     this.connected = true;
+                    if (this.keepalive) this.keepaliveBy(['#']);
                     info('Logged in on %s', this.host);
                     resolve(this);
                 }).catch((e: Error) => {
@@ -94,6 +98,28 @@ export class RouterOSAPI {
     public stream(params: string | string[] = [], callback: (err: Error, packet?: any) => void): Stream {
         if (typeof params === 'string') params = [params];
         return new Stream(this.openChannel(), params, callback);
+    }
+
+    public keepaliveBy(params: string | string[] = [], callback?: (err: Error, packet?: any) => void): void {
+        if (this.keptaliveby) clearTimeout(this.keptaliveby);
+
+        if (typeof params === 'string') params = [params];
+
+        const exec = () => {
+            if (!this.closing) {
+                if (this.keptaliveby) clearTimeout(this.keptaliveby);
+                this.keptaliveby = setTimeout(() => {
+                    this.write(params).then((data) => {
+                        if (typeof callback === 'function') callback(null, data);
+                        exec();
+                    }).catch((err: Error) => {
+                        if (typeof callback === 'function') callback(err, null);
+                        exec();
+                    });
+                }, this.timeout * 1000 / 2);
+            }
+        };
+        exec();
     }
 
     public close(): Promise<RouterOSAPI> {

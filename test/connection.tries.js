@@ -76,6 +76,28 @@ describe('RouterOSAPI', function() {
             });
         });
 
+        it('should keep alive for 30 seconds and then close', function(){
+            this.timeout(35000);
+
+            const conn = new RouterOSAPI({
+                host: config.address,
+                user: config.username,
+                password: config.password,
+                keepalive: true,
+                port: 8728
+            });
+
+            conn.connect().then(() => {
+                setTimeout(() => {
+                    conn.close().should.be.fulfilled;
+                    done();
+                }, 30000);
+            }).catch((err) => {
+                should.not.exist(err);
+                done();
+            });
+        });
+
     });
 
 });

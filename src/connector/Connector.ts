@@ -29,12 +29,12 @@ export class Connector extends EventEmitter {
     /**
      * The port of the API
      */
-    public port: number = 8728;
+    public port: number;
 
     /**
      * The timeout in seconds of the connection
      */
-    public timeout: number = 10;
+    public timeout: number;
 
     /**
      * The socket of the connection
