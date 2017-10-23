@@ -45,11 +45,10 @@ export class Channel extends EventEmitter {
      * 
      * @param connector 
      */
-    constructor(connector, streaming = false) {
+    constructor(connector) {
         super();
         this.id = Math.random().toString(36).substring(10, 26);
         this.connector = connector;
-        this.streaming = streaming;
         this.once('unknown', this.onUnknown());
     }
 
@@ -68,7 +67,9 @@ export class Channel extends EventEmitter {
      * 
      * @param params 
      */
-    public write(params: string[]): Promise<object[]> {
+    public write(params: string[], isStream = false): Promise<object[]> {
+        this.streaming = isStream;
+
         params.push('.tag=' + this.id);
 
         this.on('data', (packet: object) => this.data.push(packet));
@@ -89,9 +90,11 @@ export class Channel extends EventEmitter {
      * Closes the channel, algo asking for
      * the connector to remove the reader.
      */
-    public close(): void {
+    public close(force = false): void {
         this.emit('close');
-        this.removeAllListeners();
+        if (!this.streaming || force) {
+            this.removeAllListeners();
+        }
         this.connector.stopRead(this.id);
         return;
     }
@@ -124,8 +127,6 @@ export class Channel extends EventEmitter {
         const parsed = this.parsePacket(packet);
 
         if (packet.length > 0 && !this.streaming) this.emit('data', parsed);
-
-        info('JAJAJAJA %o', packet);
 
         switch (reply) {
             case '!re':
