@@ -72,8 +72,8 @@ export class Receiver {
      * related to the tag, we know where to send 
      * the data to
      * 
-     * @param tag 
-     * @param callback 
+     * @param {string} tag 
+     * @param {function} callback 
      */
     public read(tag: string, callback: (packet: string[]) => void): void {
         info('Reader of %s tag is being set', tag);
@@ -89,7 +89,7 @@ export class Receiver {
      * after the command has being !done, since each command
      * opens a new auto-generated tag
      * 
-     * @param tag 
+     * @param {string} tag 
      */
     public stop(tag: string): void {
         info('Not reading from %s tag anymore', tag);
@@ -104,7 +104,7 @@ export class Receiver {
      * After reading each sentence from the raw packet, sends it
      * to be parsed
      * 
-     * @param data 
+     * @param {Buffer} data 
      */
     public processRawData(data: Buffer): void {
         while (data.length > 0) {
@@ -153,8 +153,8 @@ export class Receiver {
      * related tag when another reply is detected or if
      * the packet has no more lines to be processed.
      * 
-     * @param line 
-     * @param hasMoreLines 
+     * @param {string} line 
+     * @param {boolean} hasMoreLines 
      */
     private processSentence(line: string, hasMoreLines: boolean): void {
         info('Got sentence %s', line);
@@ -208,7 +208,7 @@ export class Receiver {
      * Credits for George Joseph: https://github.com/gtjoseph
      * and for Brandon Myers: https://github.com/Trakkasure
      * 
-     * @param data 
+     * @param {Buffer} data 
      */
     private decodeLength(data: Buffer): {indx: number, lngth: number} {
         let len;

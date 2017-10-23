@@ -6,18 +6,67 @@ import * as debug from 'debug';
 const info = debug('routeros-api:stream:info');
 const error = debug('routeros-api:stream:error');
 
+/**
+ * Stream class is responsible for handling
+ * continuous data from some parts of the
+ * routeros, like /ip/address/listen or
+ * /tool/torch which keeps sending data endlessly.
+ * It is also possible to pause/resume/stop generated
+ * streams.
+ */
 export class Stream extends EventEmitter {
 
+    /**
+     * Main channel of the stream
+     */
     private channel: Channel;
+
+    /**
+     * Parameters of the menu and search of
+     * what to stream
+     */
     private params: string[];
+
+    /**
+     * The callback function sent to the
+     * streaming listener, which will get an error
+     * if any, or the packet received from the
+     * command
+     */
     private callback: (err: Error, packet?: any) => void;
 
+    /**
+     * If is streaming flag
+     */
     private streaming: boolean = true;
+
+    /**
+     * If is pausing flag
+     */
     private pausing: boolean   = false;
+
+    /**
+     * If is paused flag
+     */
     private paused: boolean    = false;
+
+    /**
+     * If is stopping flag
+     */
     private stopping: boolean  = false;
+
+    /**
+     * If is stopped flag
+     */
     private stopped: boolean   = false;
 
+    /**
+     * Constructor, it also starts the streaming after construction
+     * 
+     * @param {Channel} channel
+     * @param {Array} params 
+     * @param {function} callback 
+     */
     constructor(channel: Channel, params: string[], callback?: (err: Error, packet?: any) => void) {
         super();
         this.channel  = channel;
@@ -30,10 +79,23 @@ export class Stream extends EventEmitter {
         this.start();
     }
 
+    /**
+     * Function to receive the callback which
+     * will receive data, if not provided over the
+     * constructor or changed later after the streaming
+     * have started.
+     * 
+     * @param {function} callback 
+     */
     public data(callback: (err: Error, packet?: any) => void): void {
         this.callback = callback;
     }
 
+    /**
+     * Resume the paused stream, using the same channel
+     * 
+     * @returns {Promise}
+     */
     public resume(): Promise<void> {
         if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
 
@@ -46,6 +108,11 @@ export class Stream extends EventEmitter {
         return Promise.resolve();
     }
 
+    /**
+     * Pause the stream, but don't destroy the channel
+     * 
+     * @returns {Promise}
+     */
     public pause(): Promise<void> {
         if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
 
@@ -63,6 +130,12 @@ export class Stream extends EventEmitter {
         return Promise.resolve();
     }
 
+    /**
+     * Stop the stream entirely, can't re-stream after
+     * this if called directly.
+     * 
+     * @returns {Promise}
+     */
     public stop(): Promise<void> {
         if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
         if (!this.pausing) this.stopping = true;
@@ -80,10 +153,16 @@ export class Stream extends EventEmitter {
         });
     }
 
+    /**
+     * Alias for stop()
+     */
     public close(): Promise<void> {
         return this.stop();
     }
 
+    /**
+     * Write over the connection and start the stream
+     */
     private start(): void {
         if (!this.stopped && !this.stopping) {
             this.channel.write(this.params.slice(), true)
@@ -92,12 +171,26 @@ export class Stream extends EventEmitter {
         }
     }
 
+    /**
+     * When receiving the stream packet, give it to
+     * the callback
+     * 
+     * @returns {function}
+     */
     private onStream(): (packet: any) => void {
         return (packet: any) => {
             if (this.callback) this.callback(null, packet);
         };
     }
 
+    /**
+     * When receiving a trap over the connection,
+     * when pausing, will receive a 'interrupted' message,
+     * this will not be considered as an error but a flag
+     * for the pause and resume function
+     * 
+     * @returns {function}
+     */
     private onTrap(): (data: any) => void {
         return (data: any) => {
             if (data.message === 'interrupted') {
@@ -108,6 +201,13 @@ export class Stream extends EventEmitter {
         };
     }
 
+    /**
+     * When the channel stops sending data.
+     * It will close the channel if the
+     * intention was stopping it.
+     * 
+     * @returns {function}
+     */
     private onDone(): () => void {
         return () => {
             if (this.stopped && this.channel) {
