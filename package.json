@@ -1,10 +1,10 @@
 {
   "name": "routeros-api",
   "version": "0.0.1",
-  "description": "JavaScript Routerboard RouterOS API",
-  "main": "index.js",
+  "description": "JavaScript Mikrotik Routerboard RouterOS API",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "./node_modules/mocha/bin/mocha"
   },
   "repository": {
     "type": "git",
@@ -16,12 +16,22 @@
     "mikrotik"
   ],
   "author": "Aluisio Rodrigues Amaral",
-  "license": "GPL-3.0",
+  "license": "MIT",
   "devDependencies": {
+    "@types/debug": "0.0.30",
+    "@types/i18next": "^8.4.2",
     "@types/iconv-lite": "0.0.1",
-    "@types/node": "^8.0.31"
+    "@types/node": "^6.0.88",
+    "mocha": "^4.0.1",
+    "should": "^13.1.0",
+    "tsc": "^1.20150623.0",
+    "tslint": "^5.7.0",
+    "typescript": "^2.5.3"
   },
   "dependencies": {
+    "debug": "^3.1.0",
+    "i18next": "^9.1.0",
+    "i18next-sync-fs-backend": "^1.0.0",
     "iconv-lite": "^0.4.19"
   }
 }
