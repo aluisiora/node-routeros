@@ -40,6 +40,7 @@ export class Stream extends EventEmitter {
         if (!this.streaming) {
             this.pausing = false;
             this.start();
+            this.streaming = true;
         }
 
         return Promise.resolve();
@@ -69,7 +70,10 @@ export class Stream extends EventEmitter {
         chann.on('close', () => { chann = null; });
         return chann.write(['/cancel', '=tag=' + this.channel.Id]).then(() => {
             this.streaming = false;
-            if (!this.pausing) this.stopped = true;
+            if (!this.pausing) {
+                this.stopping = false;
+                this.stopped = true;
+            }
             return Promise.resolve();
         }).catch((err: Error) => {
             return Promise.reject(err);
@@ -82,7 +86,6 @@ export class Stream extends EventEmitter {
 
     private start(): void {
         if (!this.stopped && !this.stopping) {
-            info('veio aqui');
             this.channel.write(this.params.slice(), true)
                 .then(this.onDone())
                 .catch(this.onTrap());
@@ -97,8 +100,7 @@ export class Stream extends EventEmitter {
 
     private onTrap(): (data: any) => void {
         return (data: any) => {
-            if (this.channel) this.channel.close();
-            if (data.category === 2 && data.message === 'interrupted') {
+            if (data.message === 'interrupted') {
                 this.streaming = false;
             } else {
                 if (this.callback) this.callback(new Error(data.message));
@@ -108,8 +110,9 @@ export class Stream extends EventEmitter {
 
     private onDone(): () => void {
         return () => {
-            if (this.channel) this.channel.close();
-            if (!this.pausing)  this.stopped = false;
+            if (this.stopped && this.channel) {
+                this.channel.close(true);
+            }
         };
     }
 }

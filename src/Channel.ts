@@ -90,9 +90,11 @@ export class Channel extends EventEmitter {
      * Closes the channel, algo asking for
      * the connector to remove the reader.
      */
-    public close(): void {
+    public close(force = false): void {
         this.emit('close');
-        this.removeAllListeners();
+        if (!this.streaming || force) {
+            this.removeAllListeners();
+        }
         this.connector.stopRead(this.id);
         return;
     }
