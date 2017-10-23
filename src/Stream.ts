@@ -1,6 +1,10 @@
 import { EventEmitter } from 'events';
 import { Channel } from './Channel';
 import { RosException } from './RosException';
+import * as debug from 'debug';
+
+const info = debug('routeros-api:stream:info');
+const error = debug('routeros-api:stream:error');
 
 export class Stream extends EventEmitter {
 
@@ -13,15 +17,20 @@ export class Stream extends EventEmitter {
     private stopping: boolean  = false;
     private open: boolean      = true;
 
-    constructor(channel: Channel, params: string[], callback: (err: Error, packet?: any) => void) {
+    constructor(channel: Channel, params: string[], callback?: (err: Error, packet?: any) => void) {
         super();
         this.channel  = channel;
         this.params   = params;
         this.callback = callback;
 
+        this.channel.on('close', () => { this.open = false; });
         this.channel.on('stream', this.onStream());
-        this.channel.on('trap', this.onTrap());
-        this.channel.on('done', this.onDone());
+
+        this.start();
+    }
+
+    public data(callback: (err: Error, packet?: any) => void): void {
+        this.callback = callback;
     }
 
     public resume(): Promise<void> {
@@ -29,7 +38,7 @@ export class Stream extends EventEmitter {
 
         if (!this.streaming) {
             this.pausing = false;
-            this.channel.write(this.params);
+            this.start();
         }
 
         return Promise.resolve();
@@ -59,24 +68,36 @@ export class Stream extends EventEmitter {
         });
     }
 
+    public close(): Promise<void> {
+        return this.stop();
+    }
+
+    private start(): void {
+        this.channel.write(this.params.slice())
+            .then(this.onDone())
+            .catch(this.onTrap());
+    }
+
     private onStream(): (packet: any) => void {
         return (packet: any) => {
-            this.callback(null, packet);
+            if (this.callback) this.callback(null, packet);
         };
     }
 
     private onTrap(): (data: any) => void {
         return (data: any) => {
-            if (data.message === 'interrupted') {
+            if (this.channel) this.channel.close();
+            if (data.category === 2 && data.message === 'interrupted') {
                 this.streaming = false;
             } else {
-                this.callback(new Error(data.message));
+                if (this.callback) this.callback(new Error(data.message));
             }
         };
     }
 
     private onDone(): () => void {
         return () => {
+            if (this.channel) this.channel.close();
             if (!this.pausing)  this.open = false;
         };
     }

@@ -9,6 +9,7 @@ It is entirely based on George Joseph and Brandon Myers's work with mikronode, t
  * Documentation
  * Wiki
  * Keepalive function
+ * Streaming function is still unstable
  * More tests
  * CI and deployment to npm
  

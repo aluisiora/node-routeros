@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
 import { Connector } from './connector/Connector';
-import { Stream } from './Stream';
 import { RosException } from './RosException';
 import * as debug from 'debug';
 import i18n from './locale';
@@ -46,10 +45,11 @@ export class Channel extends EventEmitter {
      * 
      * @param connector 
      */
-    constructor(connector) {
+    constructor(connector, streaming = false) {
         super();
         this.id = Math.random().toString(36).substring(10, 26);
         this.connector = connector;
+        this.streaming = streaming;
         this.once('unknown', this.onUnknown());
     }
 
@@ -69,8 +69,6 @@ export class Channel extends EventEmitter {
      * @param params 
      */
     public write(params: string[]): Promise<object[]> {
-        if (this.streaming) return Promise.reject(new RosException('CANTWRTWHLSTRMG'));
-        
         params.push('.tag=' + this.id);
 
         this.on('data', (packet: object) => this.data.push(packet));
@@ -85,12 +83,6 @@ export class Channel extends EventEmitter {
 
             this.readAndWrite(params);
         });
-    }
-
-    public stream(params: string[], callback: (err: Error, packet?: any) => void): Stream {
-        this.streaming = true;
-        params.push('.tag=' + this.id);
-        return new Stream(this, params, callback);
     }
 
     /**
@@ -132,6 +124,8 @@ export class Channel extends EventEmitter {
         const parsed = this.parsePacket(packet);
 
         if (packet.length > 0 && !this.streaming) this.emit('data', parsed);
+
+        info('JAJAJAJA %o', packet);
 
         switch (reply) {
             case '!re':

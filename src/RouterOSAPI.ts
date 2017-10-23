@@ -2,6 +2,7 @@ import { TlsOptions } from 'tls';
 import { Connector } from './connector/Connector';
 import { Channel } from './Channel';
 import { RosException } from './RosException';
+import { Stream } from './Stream';
 import i18n from './locale';
 import * as crypto from 'crypto';
 import * as debug from 'debug';
@@ -85,16 +86,14 @@ export class RouterOSAPI {
     public write(params: string | string[], params2: string[] = []): Promise<object[]> {
         if (typeof params === 'string') params = [params];
         params = params.concat(params2);
-        let chann = this.openChannel(); // let instead of const forces garbage colletor to destroy the object when set to null
+        let chann = this.openChannel();
         chann.on('close', () => { chann = null; });
         return chann.write(params);
     }
 
-    public stream(params: string | string[] = [], callback: (err: Error, packet?: any) => void): any {
+    public stream(params: string | string[] = [], callback: (err: Error, packet?: any) => void): Stream {
         if (typeof params === 'string') params = [params];
-        let chann = this.openChannel();
-        chann.on('close', () => { chann = null; });
-        return chann.stream(params, callback);
+        return new Stream(this.openChannel(), params, callback);
     }
 
     public close(): Promise<RouterOSAPI> {
