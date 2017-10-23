@@ -1,19 +1,24 @@
 {
-  "name": "routeros-api",
+  "name": "node-routeros",
   "version": "0.0.1",
-  "description": "JavaScript Mikrotik Routerboard RouterOS API",
+  "description": "Mikrotik Routerboard RouterOS API for NodeJS",
   "main": "dist/index.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha"
   },
   "repository": {
     "type": "git",
-    "url": "git@10.62.201.18:aluisio.amaral/routeros-api.git"
+    "url": "git@github.com:aluisiora/node-routeros.git"
   },
   "keywords": [
     "routeros",
     "routerboard",
-    "mikrotik"
+    "mikrotik",
+    "javascript",
+    "routerboard-api",
+    "typescript",
+    "node",
+    "nodejs"
   ],
   "author": "Aluisio Rodrigues Amaral",
   "license": "MIT",
