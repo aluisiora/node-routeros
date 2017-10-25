@@ -90,66 +90,12 @@ export class RouterOSAPI {
         this.port      = options.port || 8728;
         this.timeout   = options.timeout || 10;
         this.tls       = options.tls;
-        this.keepalive = options.keepalive || false;
+        this.keepalive = options.keepalive || null;
         if (options.locale && options.locale !== 'en') {
             i18n.changeLanguage(options.locale, (err?: Error) => {
                 if (err) throw err;
             });
         }
-    }
-
-    /**
-     * Set host
-     * 
-     * @param {string} host
-     */
-    set Host(host: string) {
-        this.host = host;
-    }
-
-    /**
-     * Set username
-     * 
-     * @param {string} user
-     */
-    set User(user: string) {
-        this.user = user;
-    }
-
-    /**
-     * Set password
-     * 
-     * @param {string} password
-     */
-    set Password(password: string) {
-        this.password = password;
-    }
-
-    /**
-     * Set port
-     * 
-     * @param {number} port
-     */
-    set Port(port: number) {
-        this.port = port;
-    }
-
-    /**
-     * Set timeout
-     * 
-     * @param {number} timeout
-     */
-    set Timeout(timeout: number) {
-        this.timeout = timeout;
-    }
-
-    /**
-     * Set TLS
-     * 
-     * @param {TlsOptions} tls
-     */
-    set Tls(tls: TlsOptions) {
-        this.tls = tls;
     }
 
     /**
