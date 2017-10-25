@@ -1,2 +1,3 @@
 import { RouterOSAPI } from './RouterOSAPI';
-export = { RouterOSAPI };
+import { Stream } from './Stream';
+export = { RouterOSAPI, Stream };
