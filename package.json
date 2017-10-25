@@ -1,6 +1,6 @@
 {
   "name": "node-routeros",
-  "version": "0.0.4",
+  "version": "1.0.0",
   "description": "Mikrotik Routerboard RouterOS API for NodeJS",
   "main": "./dist/index",
   "types": "./dist/index",
