@@ -33,7 +33,7 @@ export class Stream extends EventEmitter {
      * if any, or the packet received from the
      * command
      */
-    private callback: (err: Error, packet?: any) => void;
+    private callback: (err: Error, packet?: any, stream?: Stream) => void;
 
     /**
      * If is streaming flag
@@ -67,7 +67,7 @@ export class Stream extends EventEmitter {
      * @param {Array} params 
      * @param {function} callback 
      */
-    constructor(channel: Channel, params: string[], callback?: (err: Error, packet?: any) => void) {
+    constructor(channel: Channel, params: string[], callback?: (err: Error, packet?: any, stream?: Stream) => void) {
         super();
         this.channel  = channel;
         this.params   = params;
@@ -87,7 +87,7 @@ export class Stream extends EventEmitter {
      * 
      * @param {function} callback 
      */
-    public data(callback: (err: Error, packet?: any) => void): void {
+    public data(callback: (err: Error, packet?: any, stream?: Stream) => void): void {
         this.callback = callback;
     }
 
@@ -138,9 +138,20 @@ export class Stream extends EventEmitter {
      */
     public stop(): Promise<void> {
         if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
+
+        if (this.paused) {
+            this.streaming = false;
+            this.stopping = false;
+            this.stopped = true;
+            if (this.channel) this.channel.close(true);
+            return Promise.resolve();
+        }
+
         if (!this.pausing) this.stopping = true;
+
         let chann = new Channel(this.channel.Connector);
         chann.on('close', () => { chann = null; });
+
         return chann.write(['/cancel', '=tag=' + this.channel.Id]).then(() => {
             this.streaming = false;
             if (!this.pausing) {
@@ -179,7 +190,7 @@ export class Stream extends EventEmitter {
      */
     private onStream(): (packet: any) => void {
         return (packet: any) => {
-            if (this.callback) this.callback(null, packet);
+            if (this.callback) this.callback(null, packet, this);
         };
     }
 
@@ -196,7 +207,7 @@ export class Stream extends EventEmitter {
             if (data.message === 'interrupted') {
                 this.streaming = false;
             } else {
-                if (this.callback) this.callback(new Error(data.message));
+                if (this.callback) this.callback(new Error(data.message), null, this);
             }
         };
     }

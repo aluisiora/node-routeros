@@ -90,66 +90,12 @@ export class RouterOSAPI {
         this.port      = options.port || 8728;
         this.timeout   = options.timeout || 10;
         this.tls       = options.tls;
-        this.keepalive = options.keepalive || false;
+        this.keepalive = options.keepalive || null;
         if (options.locale && options.locale !== 'en') {
             i18n.changeLanguage(options.locale, (err?: Error) => {
                 if (err) throw err;
             });
         }
-    }
-
-    /**
-     * Set host
-     * 
-     * @param {string} host
-     */
-    set Host(host: string) {
-        this.host = host;
-    }
-
-    /**
-     * Set username
-     * 
-     * @param {string} user
-     */
-    set User(user: string) {
-        this.user = user;
-    }
-
-    /**
-     * Set password
-     * 
-     * @param {string} password
-     */
-    set Password(password: string) {
-        this.password = password;
-    }
-
-    /**
-     * Set port
-     * 
-     * @param {number} port
-     */
-    set Port(port: number) {
-        this.port = port;
-    }
-
-    /**
-     * Set timeout
-     * 
-     * @param {number} timeout
-     */
-    set Timeout(timeout: number) {
-        this.timeout = timeout;
-    }
-
-    /**
-     * Set TLS
-     * 
-     * @param {TlsOptions} tls
-     */
-    set Tls(tls: TlsOptions) {
-        this.tls = tls;
     }
 
     /**
@@ -205,12 +151,11 @@ export class RouterOSAPI {
      * on a new channel
      * 
      * @param {string|Array} params 
-     * @param {Array} params2
+     * @param {Array<string|string[]>} moreParams
      * @returns {Promise}
      */
-    public write(params: string | string[], params2: string[] = []): Promise<object[]> {
-        if (typeof params === 'string') params = [params];
-        params = params.concat(params2);
+    public write(params: string | string[], ...moreParams: Array<string|string[]>): Promise<object[]> {
+        params = this.concatParams(params, moreParams);
         let chann = this.openChannel();
         chann.on('close', () => { chann = null; });
         return chann.write(params);
@@ -224,8 +169,13 @@ export class RouterOSAPI {
      * @param {function} callback 
      * @returns {Stream}
      */
-    public stream(params: string | string[] = [], callback: (err: Error, packet?: any) => void): Stream {
-        if (typeof params === 'string') params = [params];
+    public stream(params: string | string[] = [], ...moreParams: any[]): Stream {
+        let callback = moreParams.pop();
+        if (typeof callback !== 'function') {
+            moreParams.push(callback);
+            callback = null;
+        }
+        params = this.concatParams(params, moreParams);
         return new Stream(this.openChannel(), params, callback);
     }
 
@@ -236,10 +186,15 @@ export class RouterOSAPI {
      * @param {string|Array} params 
      * @param {function} callback 
      */
-    public keepaliveBy(params: string | string[] = [], callback?: (err: Error, packet?: any) => void): void {
+    public keepaliveBy(params: string | string[] = [], ...moreParams: any[]): void {
         if (this.keptaliveby) clearTimeout(this.keptaliveby);
 
-        if (typeof params === 'string') params = [params];
+        let callback = moreParams.pop();
+        if (typeof callback !== 'function') {
+            moreParams.push(callback);
+            callback = null;
+        }
+        params = this.concatParams(params, moreParams);
 
         const exec = () => {
             if (!this.closing) {
@@ -324,6 +279,15 @@ export class RouterOSAPI {
             error('Couldn\'t loggin onto %s, Error: %O', this.host, err);
             return Promise.reject(err);
         });
+    }
+
+    private concatParams(firstParameter: string | string[], parameters: any[]) {
+        if (typeof firstParameter === 'string') firstParameter = [firstParameter];
+        for (let parameter of parameters) {
+            if (typeof parameter === 'string') parameter = [parameter];
+            if (parameter.length > 0) firstParameter = firstParameter.concat(parameter);
+        }
+        return firstParameter;
     }
 
 }
