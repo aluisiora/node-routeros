@@ -155,11 +155,7 @@ export class RouterOSAPI {
      * @returns {Promise}
      */
     public write(params: string | string[], ...moreParams: Array<string|string[]>): Promise<object[]> {
-        if (typeof params === 'string') params = [params];
-        for (let param of moreParams) {
-            if (typeof param === 'string')  param = [param];
-            if (param.length > 0) params = params.concat(param);
-        }
+        params = this.concatParams(params, moreParams);
         let chann = this.openChannel();
         chann.on('close', () => { chann = null; });
         return chann.write(params);
@@ -174,16 +170,12 @@ export class RouterOSAPI {
      * @returns {Stream}
      */
     public stream(params: string | string[] = [], ...moreParams: any[]): Stream {
-        if (typeof params === 'string') params = [params];
         let callback = moreParams.pop();
-        for (let param of moreParams) {
-            if (typeof param === 'string') param = [param];
-            if (param.length > 0) params = params.concat(param);
-        }
         if (typeof callback !== 'function') {
-            params = params.concat(callback);
+            moreParams.push(callback);
             callback = null;
         }
+        params = this.concatParams(params, moreParams);
         return new Stream(this.openChannel(), params, callback);
     }
 
@@ -197,16 +189,12 @@ export class RouterOSAPI {
     public keepaliveBy(params: string | string[] = [], ...moreParams: any[]): void {
         if (this.keptaliveby) clearTimeout(this.keptaliveby);
 
-        if (typeof params === 'string') params = [params];
         let callback = moreParams.pop();
-        for (let param of moreParams) {
-            if (typeof param === 'string') param = [param];
-            if (param.length > 0) params = params.concat(param);
-        }
         if (typeof callback !== 'function') {
-            params = params.concat(callback);
+            moreParams.push(callback);
             callback = null;
         }
+        params = this.concatParams(params, moreParams);
 
         const exec = () => {
             if (!this.closing) {
@@ -291,6 +279,15 @@ export class RouterOSAPI {
             error('Couldn\'t loggin onto %s, Error: %O', this.host, err);
             return Promise.reject(err);
         });
+    }
+
+    private concatParams(firstParameter: string | string[], parameters: any[]) {
+        if (typeof firstParameter === 'string') firstParameter = [firstParameter];
+        for (let parameter of parameters) {
+            if (typeof parameter === 'string') parameter = [parameter];
+            if (parameter.length > 0) firstParameter = firstParameter.concat(parameter);
+        }
+        return firstParameter;
     }
 
 }
