@@ -33,7 +33,7 @@ export class Stream extends EventEmitter {
      * if any, or the packet received from the
      * command
      */
-    private callback: (err: Error, packet?: any) => void;
+    private callback: (err: Error, packet?: any, stream?: Stream) => void;
 
     /**
      * If is streaming flag
@@ -67,7 +67,7 @@ export class Stream extends EventEmitter {
      * @param {Array} params 
      * @param {function} callback 
      */
-    constructor(channel: Channel, params: string[], callback?: (err: Error, packet?: any) => void) {
+    constructor(channel: Channel, params: string[], callback?: (err: Error, packet?: any, stream?: Stream) => void) {
         super();
         this.channel  = channel;
         this.params   = params;
@@ -87,7 +87,7 @@ export class Stream extends EventEmitter {
      * 
      * @param {function} callback 
      */
-    public data(callback: (err: Error, packet?: any) => void): void {
+    public data(callback: (err: Error, packet?: any, stream?: Stream) => void): void {
         this.callback = callback;
     }
 
@@ -179,7 +179,7 @@ export class Stream extends EventEmitter {
      */
     private onStream(): (packet: any) => void {
         return (packet: any) => {
-            if (this.callback) this.callback(null, packet);
+            if (this.callback) this.callback(null, packet, this);
         };
     }
 
@@ -196,7 +196,7 @@ export class Stream extends EventEmitter {
             if (data.message === 'interrupted') {
                 this.streaming = false;
             } else {
-                if (this.callback) this.callback(new Error(data.message));
+                if (this.callback) this.callback(new Error(data.message), null, this);
             }
         };
     }
