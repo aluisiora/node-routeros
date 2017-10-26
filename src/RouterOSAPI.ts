@@ -151,12 +151,15 @@ export class RouterOSAPI {
      * on a new channel
      * 
      * @param {string|Array} params 
-     * @param {Array} params2
+     * @param {Array<string|string[]>} moreParams
      * @returns {Promise}
      */
-    public write(params: string | string[], params2: string[] = []): Promise<object[]> {
+    public write(params: string | string[], ...moreParams: Array<string|string[]>): Promise<object[]> {
         if (typeof params === 'string') params = [params];
-        params = params.concat(params2);
+        for (let param of moreParams) {
+            if (typeof param === 'string')  param = [param];
+            if (param.length > 0) params = params.concat(param);
+        }
         let chann = this.openChannel();
         chann.on('close', () => { chann = null; });
         return chann.write(params);
@@ -170,8 +173,17 @@ export class RouterOSAPI {
      * @param {function} callback 
      * @returns {Stream}
      */
-    public stream(params: string | string[] = [], callback: (err: Error, packet?: any) => void): Stream {
+    public stream(params: string | string[] = [], ...moreParams: any[]): Stream {
         if (typeof params === 'string') params = [params];
+        let callback = moreParams.pop();
+        for (let param of moreParams) {
+            if (typeof param === 'string') param = [param];
+            if (param.length > 0) params = params.concat(param);
+        }
+        if (typeof callback !== 'function') {
+            params = params.concat(callback);
+            callback = null;
+        }
         return new Stream(this.openChannel(), params, callback);
     }
 
@@ -182,10 +194,19 @@ export class RouterOSAPI {
      * @param {string|Array} params 
      * @param {function} callback 
      */
-    public keepaliveBy(params: string | string[] = [], callback?: (err: Error, packet?: any) => void): void {
+    public keepaliveBy(params: string | string[] = [], ...moreParams: any[]): void {
         if (this.keptaliveby) clearTimeout(this.keptaliveby);
 
         if (typeof params === 'string') params = [params];
+        let callback = moreParams.pop();
+        for (let param of moreParams) {
+            if (typeof param === 'string') param = [param];
+            if (param.length > 0) params = params.concat(param);
+        }
+        if (typeof callback !== 'function') {
+            params = params.concat(callback);
+            callback = null;
+        }
 
         const exec = () => {
             if (!this.closing) {
