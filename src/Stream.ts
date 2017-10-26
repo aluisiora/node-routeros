@@ -138,9 +138,20 @@ export class Stream extends EventEmitter {
      */
     public stop(): Promise<void> {
         if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
+
+        if (this.paused) {
+            this.streaming = false;
+            this.stopping = false;
+            this.stopped = true;
+            if (this.channel) this.channel.close(true);
+            return Promise.resolve();
+        }
+
         if (!this.pausing) this.stopping = true;
+
         let chann = new Channel(this.channel.Connector);
         chann.on('close', () => { chann = null; });
+
         return chann.write(['/cancel', '=tag=' + this.channel.Id]).then(() => {
             this.streaming = false;
             if (!this.pausing) {
