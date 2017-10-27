@@ -90,7 +90,7 @@ export class RouterOSAPI {
         this.port      = options.port || 8728;
         this.timeout   = options.timeout || 10;
         this.tls       = options.tls;
-        this.keepalive = options.keepalive || null;
+        this.keepalive = options.keepalive || false;
         if (options.locale && options.locale !== 'en') {
             i18n.changeLanguage(options.locale, (err?: Error) => {
                 if (err) throw err;
@@ -130,7 +130,7 @@ export class RouterOSAPI {
                 this.login().then(() => {
                     this.connecting = false;
                     this.connected = true;
-                    if (this.keepalive) this.keepaliveBy(['#']);
+                    if (this.keepalive) this.keepaliveBy('#');
                     info('Logged in on %s', this.host);
                     resolve(this);
                 }).catch((e: Error) => {
@@ -172,7 +172,7 @@ export class RouterOSAPI {
     public stream(params: string | string[] = [], ...moreParams: any[]): Stream {
         let callback = moreParams.pop();
         if (typeof callback !== 'function') {
-            moreParams.push(callback);
+            if (callback) moreParams.push(callback);
             callback = null;
         }
         params = this.concatParams(params, moreParams);
@@ -191,7 +191,7 @@ export class RouterOSAPI {
 
         let callback = moreParams.pop();
         if (typeof callback !== 'function') {
-            moreParams.push(callback);
+            if (callback) moreParams.push(callback);
             callback = null;
         }
         params = this.concatParams(params, moreParams);
@@ -200,7 +200,7 @@ export class RouterOSAPI {
             if (!this.closing) {
                 if (this.keptaliveby) clearTimeout(this.keptaliveby);
                 this.keptaliveby = setTimeout(() => {
-                    this.write(params).then((data) => {
+                    this.write(params.slice()).then((data) => {
                         if (typeof callback === 'function') callback(null, data);
                         exec();
                     }).catch((err: Error) => {
