@@ -2,6 +2,7 @@ import { TlsOptions } from 'tls';
 import { Connector } from './connector/Connector';
 import { Channel } from './Channel';
 import { RosException } from './RosException';
+import { IRosOptions } from './IRosOptions';
 import { Stream } from './Stream';
 import i18n from './locale';
 import * as crypto from 'crypto';
@@ -83,7 +84,7 @@ export class RouterOSAPI {
      * 
      * @param {Object} options 
      */
-    constructor(options: any) {
+    constructor(options: IRosOptions) {
         this.host      = options.host;
         this.user      = options.user;
         this.password  = options.password;
