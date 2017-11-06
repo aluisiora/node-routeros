@@ -1,6 +1,10 @@
 import { TlsOptions } from 'tls';
 
-export declare interface IRosOptions {
+/**
+ * Crendential options needed for instantiating
+ * a RouterOSAPI object
+ */
+export interface IRosOptions {
     host: string;
     user?: string;
     password?: string;
