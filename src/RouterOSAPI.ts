@@ -2,6 +2,7 @@ import { TlsOptions } from 'tls';
 import { Connector } from './connector/Connector';
 import { Channel } from './Channel';
 import { RosException } from './RosException';
+import { IRosOptions } from './IRosOptions';
 import { Stream } from './Stream';
 import i18n from './locale';
 import * as crypto from 'crypto';
@@ -11,10 +12,7 @@ const info = debug('routeros-api:api:info');
 const error = debug('routeros-api:api:error');
 
 /**
- * The main class of this npm package, this is the class that will
- * be exposed when importing or requiring.
- * The main use of this class is to choose when to connect and
- * write data.
+ * Creates a connection object with the credentials provided
  */
 export class RouterOSAPI {
 
@@ -83,7 +81,7 @@ export class RouterOSAPI {
      * 
      * @param {Object} options 
      */
-    constructor(options: any) {
+    constructor(options: IRosOptions) {
         this.host      = options.host;
         this.user      = options.user;
         this.password  = options.password;
