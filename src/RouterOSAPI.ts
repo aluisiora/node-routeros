@@ -12,10 +12,7 @@ const info = debug('routeros-api:api:info');
 const error = debug('routeros-api:api:error');
 
 /**
- * The main class of this npm package, this is the class that will
- * be exposed when importing or requiring.
- * The main use of this class is to choose when to connect and
- * write data.
+ * Creates a connection object with the credentials provided
  */
 export class RouterOSAPI {
 
