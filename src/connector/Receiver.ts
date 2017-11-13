@@ -42,8 +42,15 @@ export class Receiver {
      */
     private dataLength: number = 0;
 
+    /**
+     * A pipe of all responses received from the routerboard
+     */
     private sentencePipe: ISentence[] = [];
 
+    /**
+     * Flag if the sentencePipe is being processed to
+     * prevent concurrent sentences breaking the pipe
+     */
     private processingSentencePipe: boolean = false;
 
     /**
@@ -67,7 +74,9 @@ export class Receiver {
     private currentPacket: string[] = [];
 
     /**
-     * Constructor
+     * Receives the socket so we are able to read
+     * the data sent to it, separating each tag
+     * to the according listener.
      * 
      * @param socket
      */
@@ -116,27 +125,26 @@ export class Receiver {
      * @param {Buffer} data 
      */
     public processRawData(data: Buffer): void {
-        let currentLine = '';
         while (data.length > 0) {
             if (this.dataLength > 0) {
                 if (data.length <= this.dataLength) {
                     this.dataLength -= data.length;
-                    currentLine += iconv.decode(data, 'win1252');
+                    this.currentLine += iconv.decode(data, 'win1252');
                     if (this.dataLength === 0) {
                         this.sentencePipe.push({
-                            sentence: currentLine,
+                            sentence: this.currentLine,
                             hadMore: (data.length !== this.dataLength)
                         });
                         this.processSentence();
-                        currentLine = '';
+                        this.currentLine = '';
                     }
                     break;
                 } else {
                     const tmpBuffer = data.slice(0, this.dataLength);
                     const tmpStr = iconv.decode(tmpBuffer, 'win1252');
-                    currentLine += tmpStr;
-                    const line = currentLine;
-                    currentLine = '';
+                    this.currentLine += tmpStr;
+                    const line = this.currentLine;
+                    this.currentLine = '';
                     data = data.slice(this.dataLength);
                     const x = this.decodeLength(data);
                     this.dataLength = x.lngth;
@@ -164,15 +172,12 @@ export class Receiver {
     }
 
     /**
-     * Process each sentence from the data packet received on
-     * 'processRawData' function.
+     * Process each sentence from the data packet received.
      * 
      * Detects the .tag of the packet, sending the data to the
      * related tag when another reply is detected or if
-     * the packet has no more lines to be processed.
+     * the packet had no more lines to be processed.
      * 
-     * @param {string} line 
-     * @param {boolean} hasMoreLines 
      */
     private processSentence(): void {
         if (!this.processingSentencePipe) {
