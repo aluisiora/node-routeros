@@ -1,6 +1,6 @@
 {
   "name": "node-routeros",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Mikrotik Routerboard RouterOS API for NodeJS",
   "main": "./dist/index",
   "types": "./dist/index",
@@ -28,8 +28,8 @@
     "@types/debug": "0.0.30",
     "@types/i18next": "^8.4.2",
     "@types/iconv-lite": "0.0.1",
+    "chai": "^4.1.2",
     "mocha": "^4.0.1",
-    "should": "^13.1.0",
     "tslint": "^5.7.0",
     "typescript": "^2.5.3"
   },

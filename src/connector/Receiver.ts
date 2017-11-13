@@ -6,11 +6,16 @@ import i18n from '../locale';
 const info = debug('routeros-api:connector:receiver:info');
 const error = debug('routeros-api:connector:receiver:error');
 
+export interface ISentence {
+    sentence: string;
+    hadMore: boolean;
+}
+
 /**
  * Interface of the callback which is stored
  * the tag readers with their respective callbacks
  */
-interface IReadCallback {
+export interface IReadCallback {
     name: string;
     callback: (data: string[]) => void;
 }
@@ -36,6 +41,10 @@ export class Receiver {
      * the socket
      */
     private dataLength: number = 0;
+
+    private sentencePipe: ISentence[] = [];
+
+    private processingSentencePipe: boolean = false;
 
     /**
      * The current line being processed from the data chain
@@ -107,22 +116,27 @@ export class Receiver {
      * @param {Buffer} data 
      */
     public processRawData(data: Buffer): void {
+        let currentLine = '';
         while (data.length > 0) {
             if (this.dataLength > 0) {
                 if (data.length <= this.dataLength) {
                     this.dataLength -= data.length;
-                    this.currentLine += iconv.decode(data, 'win1252');
+                    currentLine += iconv.decode(data, 'win1252');
                     if (this.dataLength === 0) {
-                        this.processSentence(this.currentLine, (data.length !== this.dataLength));
-                        this.currentLine = '';
+                        this.sentencePipe.push({
+                            sentence: currentLine,
+                            hadMore: (data.length !== this.dataLength)
+                        });
+                        this.processSentence();
+                        currentLine = '';
                     }
                     break;
                 } else {
                     const tmpBuffer = data.slice(0, this.dataLength);
                     const tmpStr = iconv.decode(tmpBuffer, 'win1252');
-                    this.currentLine += tmpStr;
-                    const line = this.currentLine;
-                    this.currentLine = '';
+                    currentLine += tmpStr;
+                    const line = currentLine;
+                    currentLine = '';
                     data = data.slice(this.dataLength);
                     const x = this.decodeLength(data);
                     this.dataLength = x.lngth;
@@ -131,7 +145,11 @@ export class Receiver {
                         this.dataLength = 0;
                         data = data.slice(1); // get rid of excess buffer
                     }
-                    this.processSentence(line, (data.length > 0));
+                    this.sentencePipe.push({
+                        sentence: line,
+                        hadMore: (data.length > 0)
+                    });
+                    this.processSentence();
                 }
             } else {
                 const y = this.decodeLength(data);
@@ -156,33 +174,62 @@ export class Receiver {
      * @param {string} line 
      * @param {boolean} hasMoreLines 
      */
-    private processSentence(line: string, hasMoreLines: boolean): void {
-        info('Got sentence %s', line);
+    private processSentence(): void {
+        if (!this.processingSentencePipe) {
+            info('Got asked to process sentence pipe');
 
-        if (!hasMoreLines && this.currentReply === '!fatal') {
-            this.socket.emit('fatal');
-            return;
+            this.processingSentencePipe = true;
+
+            const process = () => {
+                if (this.sentencePipe.length > 0) {
+                    const line = this.sentencePipe.shift();
+
+                    if (!line.hadMore && this.currentReply === '!fatal') {
+                        this.socket.emit('fatal');
+                        return;
+                    }
+    
+                    info('Processing line %s', line.sentence);
+
+                    if (/^\.tag=/.test(line.sentence)) {
+                        this.currentTag = line.sentence.substring(5);
+                    } else if (/^!/.test(line.sentence)) {
+                        if (this.currentTag) {
+                            info('Received another response, sending current data to tag %s', this.currentTag);
+                            this.sendTagData(this.currentTag);
+                        }
+                        this.currentPacket.push(line.sentence);
+                        this.currentReply = line.sentence;
+                    } else {
+                        this.currentPacket.push(line.sentence);
+                    }
+
+                    if (this.sentencePipe.length === 0) {
+                        if (!line.hadMore) {
+                            info('No more sentences to process, will send data to tag %s', this.currentTag);
+                            this.sendTagData(this.currentTag);
+                        }
+                        this.processingSentencePipe = false;
+                    } else {
+                        process();
+                    }
+                    
+                } else {
+                    this.processingSentencePipe = false;
+                }
+
+            };
+
+            process();            
         }
-
-        if (/\.tag=/.test(line)) {
-            this.currentTag = line.substring(5);
-        } else if (/^!/.test(line)) {
-            if (this.currentTag) this.sendTagData();
-            this.currentPacket.push(line);
-            this.currentReply = line;
-        } else {
-            this.currentPacket.push(line);
-        }
-
-        if (!hasMoreLines) this.sendTagData();
     }
 
     /**
      * Send the data collected from the tag to the
      * tag reader
      */
-    private sendTagData(): void {
-        const tag = this.tags.get(this.currentTag);
+    private sendTagData(currentTag: string): void {
+        const tag = this.tags.get(currentTag);
         if (tag) {
             info('Sending to tag %s the packet %O', tag.name, this.currentPacket);
             tag.callback(this.currentPacket);

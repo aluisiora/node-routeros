@@ -81,7 +81,8 @@ export class Connector extends EventEmitter {
         this.host = options.host;
         if (options.timeout) this.timeout = options.timeout;
         if (options.port) this.port = options.port;
-        if (options.tls) {
+        if (typeof options.tls === 'boolean' && options.tls) options.tls = {};
+        if (typeof options.tls === 'object') {
             if (!options.port) this.port = 8729;
             this.socket = new TLSSocket(this.socket, options.tls);
         }
