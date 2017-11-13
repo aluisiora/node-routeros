@@ -9,7 +9,6 @@ let conn;
 
 describe("RosApiOperations", () => {
 
-
     before("should stablish connection and save api object", (done) => {
         conn = new RouterOSAPI({
             host: address,
@@ -41,12 +40,11 @@ describe("RosApiOperations", () => {
 
         conn.write([
             "/interface/print",
-            "=.proplist=id,name"
+            "=.proplist=.id,name"
         ]).then((interfaces) => {
-            let interf = interfaces[0];
-            interf.should.have.a.property("id")
-                .and.a.property("name")
-                .and.not.a.property("type");
+            expect(interfaces[0]).to.have.a.property(".id")
+            expect(interfaces[0]).to.have.a.property("name")
+            expect(interfaces[0]).to.not.have.a.property("type");
             done();
         }).catch((err) => {
             should.not.exist(err);
@@ -58,7 +56,7 @@ describe("RosApiOperations", () => {
     after("should disconnect", (done) => {
         this.timeout = 5000;
 
-        conn.end().then(() => {
+        conn.close().then(() => {
             done();
         }).catch((err) => {
             should.not.exist(err);
