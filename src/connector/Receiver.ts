@@ -125,27 +125,26 @@ export class Receiver {
      * @param {Buffer} data 
      */
     public processRawData(data: Buffer): void {
-        let currentLine = '';
         while (data.length > 0) {
             if (this.dataLength > 0) {
                 if (data.length <= this.dataLength) {
                     this.dataLength -= data.length;
-                    currentLine += iconv.decode(data, 'win1252');
+                    this.currentLine += iconv.decode(data, 'win1252');
                     if (this.dataLength === 0) {
                         this.sentencePipe.push({
-                            sentence: currentLine,
+                            sentence: this.currentLine,
                             hadMore: (data.length !== this.dataLength)
                         });
                         this.processSentence();
-                        currentLine = '';
+                        this.currentLine = '';
                     }
                     break;
                 } else {
                     const tmpBuffer = data.slice(0, this.dataLength);
                     const tmpStr = iconv.decode(tmpBuffer, 'win1252');
-                    currentLine += tmpStr;
-                    const line = currentLine;
-                    currentLine = '';
+                    this.currentLine += tmpStr;
+                    const line = this.currentLine;
+                    this.currentLine = '';
                     data = data.slice(this.dataLength);
                     const x = this.decodeLength(data);
                     this.dataLength = x.lngth;
