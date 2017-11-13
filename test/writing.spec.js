@@ -1,11 +1,14 @@
-const should = require('should');
-const RouterOSAPI = require('../dist/index');
+const chai = require('chai');
+const RouterOSAPI = require('../dist').RouterOSAPI;
 const config = {
-    address: '10.62.0.92',
+    address: '10.62.0.25',
     username: 'admin',
     password: 'admin',
     port: 8728
 };
+
+const should = chai.should();
+// const expect = chai.expect;
 
 describe('RouterOSAPI', function () {
 
@@ -28,24 +31,24 @@ describe('RouterOSAPI', function () {
                     address_id = data[0].ret;
                     done();
                 }).catch((err) => {
-                    should.fail();
+                    should.not.exist(err);
                     done(err);
                 });
 
             }).catch((err) => {
-                should.fail();
-                done(err);
+                should.not.exist(err);
+                done(err.message);
             });
         });
 
         it('should print address ' + address + ' from interface ether2', (done) => {
 
             conn.write('/ip/address/print', ['?address=' + address]).then((data) => {
-                should(data[0].address).be.exactly(address);
+                data[0].address.should.be.equal(address);
                 done();
             }).catch((err) => {
-                should.fail();
-                done(err);
+                should.not.exist(err);
+                done(err.message);
             });
 
         });
@@ -53,11 +56,11 @@ describe('RouterOSAPI', function () {
         it('should remove address ' + address + ' from interface ether2', (done) => {
             
             conn.write('/ip/address/remove', ['=.id=' + address_id]).then((data) => {
-                should(data.length).be.exactly(0);
+                data.length.should.be.equal(0);
                 done();
             }).catch((err) => {
-                should.fail();
-                done(err);
+                should.not.exist(err);
+                done(err.message);
             }).then(() => {
                 conn.close();
             });

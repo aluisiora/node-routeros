@@ -1,17 +1,19 @@
-const should = require('should');
-const RouterOSAPI = require('../dist/index');
+const should = require('chai').should;
+const RouterOSAPI = require('../dist/index').RouterOSAPI;
 const config = {
-    address: '10.62.0.92',
+    address: '10.62.0.25',
     username: 'admin',
     password: 'admin',
     port: 8728
 };
 
+should();
+
 describe('RouterOSAPI', function() {
     
     describe('#connect()', () => {
 
-        it('should connect normally 192.168.88.1', () => {
+        it('should connect normally on ' + config.address, (done) => {
             const conn = new RouterOSAPI({
                 host: config.address,
                 user: config.username,
@@ -19,9 +21,11 @@ describe('RouterOSAPI', function() {
             });
 
             conn.connect().then(() => {
-                conn.close().should.be.fulfilled;
+                conn.close();
+                done();
             }).catch((err) => {
                 should.not.exist(err);
+                done(err.message);
             });
         });
 
@@ -36,7 +40,7 @@ describe('RouterOSAPI', function() {
                 should.fail();
                 done();
             }).catch((err) => {
-                should(err.errno).equal('CANTLOGIN');
+                err.errno.should.be.equal('CANTLOGIN');
                 done();
             });
         });
@@ -54,7 +58,7 @@ describe('RouterOSAPI', function() {
                 should.fail();
                 done();
             }).catch((err) => {
-                should(err.errno).be.oneOf('EHOSTUNREACH', 'ECONNREFUSED');
+                err.errno.should.be.equal('EHOSTUNREACH');
                 done();
             });
         });
@@ -71,7 +75,7 @@ describe('RouterOSAPI', function() {
                 should.fail();
                 done();
             }).catch((err) => {
-                should(err.errno).be.oneOf('EHOSTUNREACH', 'ECONNREFUSED');
+                err.errno.should.be.equal('ECONNREFUSED');
                 done();
             });
         });
@@ -89,8 +93,12 @@ describe('RouterOSAPI', function() {
 
             conn.connect().then(() => {
                 setTimeout(() => {
-                    conn.close().should.be.fulfilled;
-                    done();
+                    conn.close().then(() => {
+                        done();
+                    }).catch((err) => {
+                        should.not.exist(err);
+                        done(err.message);
+                    });
                 }, 30000);
             }).catch((err) => {
                 should.not.exist(err);
