@@ -5,7 +5,7 @@
   "main": "./dist/index",
   "types": "./dist/index",
   "scripts": {
-    "prepublish": "./node_modules/.bin/tsc -p \"./src/tsconfig.json\"",
+    "prepublishOnly": "./node_modules/.bin/tsc -p \"./src/tsconfig.json\"",
     "test": "./node_modules/mocha/bin/mocha"
   },
   "repository": {
