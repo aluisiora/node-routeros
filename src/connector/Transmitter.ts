@@ -37,11 +37,12 @@ export class Transmitter {
      * @param {string} data
      */
     public write(data: string): void {
-        info('Writing command %s over the socket', data);
         const encodedData = this.encodeString(data);
         if (!this.socket.writable || this.pool.length > 0) {
+            info('Socket not writable, saving %o in the pool', data);
             this.pool.push(encodedData);
         } else {
+            info('Writing command %s over the socket', data);
             this.socket.write(encodedData);
         }
     }
