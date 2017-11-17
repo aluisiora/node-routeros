@@ -47,7 +47,7 @@ export class Channel extends EventEmitter {
      */
     constructor(connector) {
         super();
-        this.id = Math.random().toString(36).substring(10, 26);
+        this.id = Math.random().toString(36).substring(3);
         this.connector = connector;
         this.once('unknown', this.onUnknown());
     }
