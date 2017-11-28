@@ -1,7 +1,7 @@
 # Description
 This is a Mikrotik Routerboard API written in Typescript for nodejs, can be either used with plain javascript or imported on typescript projects.
 
-This project is entirely based on [George Joseph](https://github.com/f5eng/mikronode-ng) and [Brandon Myers](https://github.com/Trakkasure/mikronode)'s work with mikronode, thank you very much.
+### This library will handle the API in a more lowerlevel way, for a simpler to use interface I recommend my [`routeros-client`](https://github.com/aluisiora/routeros-client) for a more "object-oriented" API, which wraps this API. It has a very rich documentation, so please check it out.
 
 # Features
  * Connection and reconnection without destroying the object.
@@ -13,7 +13,7 @@ This project is entirely based on [George Joseph](https://github.com/f5eng/mikro
  * Support languages with accents, keeping it consistent throughout winbox and api.
  * Support multiple languages for throwing errors. (Currently only brazilian portuguese and english)
 
-# Usage
+# Installing
 
 ```
 npm install node-routeros --save
@@ -136,12 +136,38 @@ conn.connect().then(() => {
     console.log(err);
 });
 ```
+# Cloning this repo
+Note that, if are cloning this repo, you must be familiar with [Typescript](https://www.typescriptlang.org/) so you can make your changes.
+## Testing
 
-# Testing
+In order to run the tests, I used [RouterOS CHR](https://mikrotik.com/download) on a virtual machine with 4 interfaces, where the first interface is a bridge of my network card:
 
-Currently, I am running tests though a VM with RouterOS CHR. I still haven't figured out a better way to do this.
-
-## TODO
- * More tests
- * CI and deployment to npm
+![VirtualBox RouterOS CHR Conf](https://raw.githubusercontent.com/aluisiora/routeros-client/master/images/routeros-chr-interfaces.gif)
+# TODO
+ * Write more tests
  
+# Credits
+This project is entirely based on [George Joseph](https://github.com/f5eng/mikronode-ng) and [Brandon Myers](https://github.com/Trakkasure/mikronode)'s work with `mikronode`, thank you very much!!!
+
+# License
+MIT License
+
+Copyright (c) 2017 Aluísio Rodrigues Amaral
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
