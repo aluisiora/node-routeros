@@ -1,12 +1,12 @@
 {
   "name": "node-routeros",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Mikrotik Routerboard RouterOS API for NodeJS",
   "main": "./dist/index",
   "types": "./dist/index",
   "scripts": {
-    "prepublishOnly": "./node_modules/.bin/tsc -p \"./src/tsconfig.json\"",
-    "test": "./node_modules/mocha/bin/mocha"
+    "prepublishOnly": "tsc -p \"./src/tsconfig.json\"",
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
@@ -28,13 +28,13 @@
     "@types/debug": "0.0.30",
     "@types/i18next": "^8.4.2",
     "@types/iconv-lite": "0.0.1",
+    "@types/node": "^6.0.90",
     "chai": "^4.1.2",
     "mocha": "^4.0.1",
     "tslint": "^5.7.0",
     "typescript": "^2.5.3"
   },
   "dependencies": {
-    "@types/node": "^6.0.90",
     "debug": "^3.1.0",
     "i18next": "^9.1.0",
     "i18next-sync-fs-backend": "^1.0.0",
