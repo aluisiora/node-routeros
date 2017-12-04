@@ -5,7 +5,7 @@
   "main": "./dist/index",
   "types": "./dist/index",
   "scripts": {
-    "prepublishOnly": "tsc -p \"./src/tsconfig.json\"",
+    "prepublishOnly": "rm -rf ./dist && tsc -p ./src/tsconfig.json",
     "test": "ENV=testing mocha"
   },
   "repository": {
