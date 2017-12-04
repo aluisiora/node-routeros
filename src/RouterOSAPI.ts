@@ -7,6 +7,7 @@ import { Stream } from './Stream';
 import i18n from './locale';
 import * as crypto from 'crypto';
 import * as debug from 'debug';
+import { setInterval, clearTimeout } from 'timers';
 
 const info = debug('routeros-api:api:info');
 const error = debug('routeros-api:api:error');
@@ -75,6 +76,23 @@ export class RouterOSAPI {
      * The function timeout that will keep the connection alive
      */
     private keptaliveby: NodeJS.Timer;
+
+    /**
+     * Counter for channels open
+     */
+    private channelsOpen: number = 0;
+
+    /**
+     * Flag if the connection was held by the keepalive parameter
+     * or keepaliveBy function
+     */
+    private holdingConnectionWithKeepalive: boolean = false;
+
+    /**
+     * Store the timeout when holding the connection
+     * when waiting for a channel response
+     */
+    private connectionHoldInterval: NodeJS.Timer;
 
     /**
      * Constructor, also sets the language of the thrown errors
@@ -155,7 +173,23 @@ export class RouterOSAPI {
     public write(params: string | string[], ...moreParams: Array<string|string[]>): Promise<object[]> {
         params = this.concatParams(params, moreParams);
         let chann = this.openChannel();
-        chann.on('close', () => { chann = null; });
+        this.channelsOpen++;
+
+        // If it's the first connection on the pool, hold the connection
+        // to prevent a timeout before receiving a response
+        // if the command takes too long to process by the RouterOS
+        // on the other end
+        if (this.channelsOpen === 1) this.holdConnection();
+
+        chann.on('close', () => { 
+            chann = null; // putting garbage collector to work :]
+            this.channelsOpen--;
+
+            // If the channels count reaches 0
+            // release the hold created so it can
+            // timeout normally
+            if (this.channelsOpen === 0) this.releaseConnectionHold();
+        });
         return chann.write(params);
     }
 
@@ -185,6 +219,8 @@ export class RouterOSAPI {
      * @param {function} callback 
      */
     public keepaliveBy(params: string | string[] = [], ...moreParams: any[]): void {
+        this.holdingConnectionWithKeepalive = true;
+
         if (this.keptaliveby) clearTimeout(this.keptaliveby);
 
         let callback = moreParams.pop();
@@ -241,6 +277,34 @@ export class RouterOSAPI {
      */
     private openChannel(): Channel {
         return new Channel(this.connector);
+    }
+
+    /**
+     * Holds the connection if keepalive wasn't set
+     * so when a channel opens, ensure that we
+     * receive a response before a timeout
+     */
+    private holdConnection() {
+        if (!this.holdingConnectionWithKeepalive) {
+            const holdConnInterval = () => {
+                this.connectionHoldInterval = setTimeout(() => {
+                    this.write('#').then(() => {
+                        holdConnInterval();
+                    }).catch(() => {
+                        holdConnInterval();
+                    });
+                }, this.timeout * 1000 / 2);
+            };
+            holdConnInterval();
+        }
+    }
+
+    /**
+     * Release the connection that was held
+     * when waiting for responses from channels open
+     */
+    private releaseConnectionHold() {
+        if (this.connectionHoldInterval) clearTimeout(this.connectionHoldInterval);
     }
 
     /**
