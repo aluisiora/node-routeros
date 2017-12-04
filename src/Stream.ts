@@ -74,7 +74,7 @@ export class Stream extends EventEmitter {
         this.callback = callback;
 
         this.channel.on('close', () => { this.stopped = false; });
-        this.channel.on('stream', this.onStream());
+        this.channel.on('stream', this.onStream.bind(this));
 
         this.start();
     }
@@ -177,8 +177,8 @@ export class Stream extends EventEmitter {
     private start(): void {
         if (!this.stopped && !this.stopping) {
             this.channel.write(this.params.slice(), true)
-                .then(this.onDone())
-                .catch(this.onTrap());
+                .then(this.onDone.bind(this))
+                .catch(this.onTrap.bind(this));
         }
     }
 
@@ -188,10 +188,8 @@ export class Stream extends EventEmitter {
      * 
      * @returns {function}
      */
-    private onStream(): (packet: any) => void {
-        return (packet: any) => {
-            if (this.callback) this.callback(null, packet, this);
-        };
+    private onStream(packet: any): void {
+        if (this.callback) this.callback(null, packet, this);
     }
 
     /**
@@ -202,14 +200,12 @@ export class Stream extends EventEmitter {
      * 
      * @returns {function}
      */
-    private onTrap(): (data: any) => void {
-        return (data: any) => {
-            if (data.message === 'interrupted') {
-                this.streaming = false;
-            } else {
-                if (this.callback) this.callback(new Error(data.message), null, this);
-            }
-        };
+    private onTrap(data: any): void {
+        if (data.message === 'interrupted') {
+            this.streaming = false;
+        } else {
+            if (this.callback) this.callback(new Error(data.message), null, this);
+        }
     }
 
     /**
@@ -219,11 +215,9 @@ export class Stream extends EventEmitter {
      * 
      * @returns {function}
      */
-    private onDone(): () => void {
-        return () => {
-            if (this.stopped && this.channel) {
-                this.channel.close(true);
-            }
-        };
+    private onDone(): void {
+        if (this.stopped && this.channel) {
+            this.channel.close(true);
+        }
     }
 }

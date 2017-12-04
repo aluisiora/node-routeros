@@ -49,7 +49,7 @@ export class Channel extends EventEmitter {
         super();
         this.id = Math.random().toString(36).substring(3);
         this.connector = connector;
-        this.once('unknown', this.onUnknown());
+        this.once('unknown', this.onUnknown.bind(this));
     }
 
     /**
@@ -188,11 +188,8 @@ export class Channel extends EventEmitter {
      * @param {string} reply
      * @returns {function}
      */
-    private onUnknown(): (reply: string) => void {
-        const $this = this;
-        return (reply: string) => {
-            throw new Error(i18n.t('UNKNOWNREPLY', { reply: reply }));
-        };
+    private onUnknown(reply: string): void {
+        throw new Error(i18n.t('UNKNOWNREPLY', { reply: reply }));
     }
 
 }
