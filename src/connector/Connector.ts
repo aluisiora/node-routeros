@@ -87,13 +87,13 @@ export class Connector extends EventEmitter {
             this.socket = new TLSSocket(this.socket, options.tls);
         }
 
-        this.socket.once('connect', this.onConnect());
-        this.socket.once('end', this.onEnd());
-        this.socket.once('timeout', this.onTimeout());
-        this.socket.once('fatal', this.onEnd());
+        this.socket.once('connect', this.onConnect.bind(this));
+        this.socket.once('end', this.onEnd.bind(this));
+        this.socket.once('timeout', this.onTimeout.bind(this));
+        this.socket.once('fatal', this.onEnd.bind(this));
 
-        this.socket.on('error', this.onError());
-        this.socket.on('data', this.onData());
+        this.socket.on('error', this.onError.bind(this));
+        this.socket.on('data', this.onData.bind(this));
 
         this.socket.setTimeout(this.timeout * 1000);
         this.socket.setKeepAlive(true);
@@ -174,15 +174,12 @@ export class Connector extends EventEmitter {
      * 
      * @returns {function}
      */
-    private onConnect(): () => void {
-        const $this = this;
-        return () => {
-            $this.connecting = false;
-            $this.connected = true;
-            info('Connected on %s', $this.host);
-            $this.transmitter.runPool();
-            $this.emit('connected', $this);
-        };
+    private onConnect(): void {
+        this.connecting = false;
+        this.connected = true;
+        info('Connected on %s', this.host);
+        this.transmitter.runPool();
+        this.emit('connected', this);
     }
 
     /**
@@ -192,12 +189,9 @@ export class Connector extends EventEmitter {
      * 
      * @returns {function}
      */
-    private onEnd(): () => void {
-        const $this = this;
-        return () => {
-            $this.emit('close', $this);
-            $this.destroy();
-        };
+    private onEnd(): void {
+        this.emit('close', this);
+        this.destroy();
     }
 
     /**
@@ -207,14 +201,11 @@ export class Connector extends EventEmitter {
      * 
      * @returns {function}
      */
-    private onError(): (err: any) => void {
-        const $this = this;
-        return (err: any) => {
-            err = new RosException(err.errno, err);
-            error('Problem while trying to connect to %s. Error: %s', $this.host, err.message);
-            $this.emit('error', err, $this);
-            $this.destroy();
-        };
+    private onError(err: any): void {
+        err = new RosException(err.errno, err);
+        error('Problem while trying to connect to %s. Error: %s', this.host, err.message);
+        this.emit('error', err, this);
+        this.destroy();
     }
 
     /**
@@ -223,12 +214,9 @@ export class Connector extends EventEmitter {
      * 
      * @returns {function}
      */
-    private onTimeout(): () => void {
-        const $this = this;
-        return () => {
-            $this.emit('timeout', new RosException('SOCKTMOUT', { seconds: $this.timeout}), $this);
-            $this.destroy();
-        };
+    private onTimeout(): void {
+        this.emit('timeout', new RosException('SOCKTMOUT', { seconds: this.timeout}), this);
+        this.destroy();        
     }
 
     /**
@@ -237,12 +225,9 @@ export class Connector extends EventEmitter {
      * 
      * @returns {function}
      */
-    private onData(): (data: Buffer) => void {
-        const $this = this;
-        return (data: Buffer) => {
-            info('Got data from the socket, will process it');
-            $this.receiver.processRawData(data);
-        };
+    private onData(data: Buffer): void {
+        info('Got data from the socket, will process it');
+        this.receiver.processRawData(data);
     }
 
 }

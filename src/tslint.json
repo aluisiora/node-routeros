@@ -14,6 +14,7 @@
         "no-trailing-whitespace": false,
         "max-line-length": false,
         "no-shadowed-variable": false,
+        "no-var-requires": false,
         "quotemark": [true, "single", "avoid-escape", "avoid-template"]
     },
     "rulesDirectory": []

@@ -1,3 +1,8 @@
+if (process.env.ENV === 'testing') {
+    const sourceMapSupport = require('source-map-support');
+    sourceMapSupport.install();
+}
+
 export * from './RouterOSAPI';
 export * from './connector/Connector';
 export * from './connector/Receiver';
