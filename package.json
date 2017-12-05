@@ -1,12 +1,13 @@
 {
   "name": "node-routeros",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Mikrotik Routerboard RouterOS API for NodeJS",
   "main": "./dist/index",
   "types": "./dist/index",
   "scripts": {
-    "prepublishOnly": "tsc -p \"./src/tsconfig.json\"",
-    "test": "ENV=testing mocha"
+    "prepublishOnly": "rm -rf ./dist && tsc -p ./src/tsconfig.json",
+    "test": "ENV=testing mocha",
+    "build:watch": "tsc -w -p ./src"
   },
   "repository": {
     "type": "git",
