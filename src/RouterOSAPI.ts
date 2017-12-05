@@ -289,7 +289,7 @@ export class RouterOSAPI {
      * receive a response before a timeout
      */
     private holdConnection() {
-        if (!this.holdingConnectionWithKeepalive) {
+        if (this.connected && !this.holdingConnectionWithKeepalive) {
             if (this.connectionHoldInterval) clearTimeout(this.connectionHoldInterval);
             const holdConnInterval = () => {
                 this.connectionHoldInterval = setTimeout(() => {
