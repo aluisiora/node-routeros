@@ -263,6 +263,10 @@ export class RouterOSAPI {
             return Promise.resolve(this);
         }
 
+        if (this.connectionHoldInterval) {
+            clearTimeout(this.connectionHoldInterval);
+        }
+
         return new Promise((resolve) => {
             this.closing = true;
             this.connector.close();
@@ -286,9 +290,12 @@ export class RouterOSAPI {
      */
     private holdConnection() {
         if (!this.holdingConnectionWithKeepalive) {
+            if (this.connectionHoldInterval) clearTimeout(this.connectionHoldInterval);
             const holdConnInterval = () => {
                 this.connectionHoldInterval = setTimeout(() => {
-                    this.write('#').then(() => {
+                    let chann = this.openChannel();
+                    chann.on('close', () => { chann = null; });
+                    chann.write(['#']).then(() => {
                         holdConnInterval();
                     }).catch(() => {
                         holdConnInterval();

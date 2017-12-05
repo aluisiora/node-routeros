@@ -6,7 +6,8 @@
   "types": "./dist/index",
   "scripts": {
     "prepublishOnly": "rm -rf ./dist && tsc -p ./src/tsconfig.json",
-    "test": "ENV=testing mocha"
+    "test": "ENV=testing mocha",
+    "build:watch": "tsc -w -p ./src"
   },
   "repository": {
     "type": "git",
