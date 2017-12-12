@@ -5,9 +5,10 @@
   "main": "./dist/index",
   "types": "./dist/index",
   "scripts": {
-    "prepublishOnly": "rm -rf ./dist && tsc -p ./src/tsconfig.json",
+    "prepublishOnly": "rm -rf ./dist && tsc -p ./src",
     "test": "ENV=testing mocha",
-    "build:watch": "tsc -w -p ./src"
+    "tsc:build": "rm -rf ./dist && tsc -p ./src",
+    "tsc:build:watch": "rm -rf ./dist && tsc -w -p ./src"
   },
   "repository": {
     "type": "git",

@@ -24,8 +24,7 @@ describe('RouterOSAPI', function() {
                 conn.close();
                 done();
             }).catch((err) => {
-                should.not.exist(err);
-                done(err.message);
+                done(err);
             });
         });
 
@@ -63,7 +62,7 @@ describe('RouterOSAPI', function() {
             });
         });
 
-        it('should refuse connection from port 666', function(done){
+        it('should refuse connection from port 666', function(done) {
             const conn = new RouterOSAPI({
                 host: config.address,
                 user: config.username,
@@ -80,7 +79,7 @@ describe('RouterOSAPI', function() {
             });
         });
 
-        it('should keep alive for 30 seconds and then close', function(done){
+        it('should keep alive for 30 seconds and then close', function(done) {
             this.timeout(35000);
 
             const conn = new RouterOSAPI({
@@ -96,12 +95,32 @@ describe('RouterOSAPI', function() {
                     conn.close().then(() => {
                         done();
                     }).catch((err) => {
-                        should.not.exist(err);
-                        done(err.message);
+                        done(err);
                     });
                 }, 30000);
             }).catch((err) => {
-                should.not.exist(err);
+                done(err);
+            });
+        });
+
+        it('should give a timeout error after connecting', function(done) {
+            this.timeout(6000);
+
+            const conn = new RouterOSAPI({
+                host: config.address,
+                user: config.username,
+                password: config.password,
+                timeout: 4
+            });
+
+            conn.connect().then(() => {
+                // wait for timeout
+            }).catch((err) => {
+                done(err);
+            });
+
+            conn.on('error', (e) => {
+                e.should.have.property("message");
                 done();
             });
         });
