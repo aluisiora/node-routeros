@@ -31,13 +31,11 @@ describe('RouterOSAPI', function () {
                     address_id = data[0].ret;
                     done();
                 }).catch((err) => {
-                    should.not.exist(err);
                     done(err);
                 });
 
             }).catch((err) => {
-                should.not.exist(err);
-                done(err.message);
+                done(err);
             });
         });
 
@@ -47,8 +45,7 @@ describe('RouterOSAPI', function () {
                 data[0].address.should.be.equal(address);
                 done();
             }).catch((err) => {
-                should.not.exist(err);
-                done(err.message);
+                done(err);
             });
 
         });
@@ -59,8 +56,7 @@ describe('RouterOSAPI', function () {
                 data.length.should.be.equal(0);
                 done();
             }).catch((err) => {
-                should.not.exist(err);
-                done(err.message);
+                done(err);
             }).then(() => {
                 conn.close();
             });
