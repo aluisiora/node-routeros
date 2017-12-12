@@ -19,7 +19,6 @@ describe("RosApiOperations", () => {
         conn.connect().then(() => {
             done();
         }).catch((err) => {
-            should.not.exist(err);
             done(err);
         });
     });
@@ -30,8 +29,7 @@ describe("RosApiOperations", () => {
             interfaces.length.should.be.above(0);
             done();
         }).catch((err) => {
-            should.not.exist(err);
-            done(err.message);
+            done(err);
         });
 
     });
@@ -47,8 +45,7 @@ describe("RosApiOperations", () => {
             expect(interfaces[0]).to.not.have.a.property("type");
             done();
         }).catch((err) => {
-            should.not.exist(err);
-            done(err.message);
+            done(err);
         });
 
     });
@@ -59,7 +56,6 @@ describe("RosApiOperations", () => {
         conn.close().then(() => {
             done();
         }).catch((err) => {
-            should.not.exist(err);
             done(err);
         });
     });
