@@ -8,6 +8,7 @@ import i18n from './locale';
 import * as crypto from 'crypto';
 import * as debug from 'debug';
 import { setInterval, clearTimeout } from 'timers';
+import { EventEmitter } from 'events';
 
 const info = debug('routeros-api:api:info');
 const error = debug('routeros-api:api:error');
@@ -15,7 +16,7 @@ const error = debug('routeros-api:api:error');
 /**
  * Creates a connection object with the credentials provided
  */
-export class RouterOSAPI {
+export class RouterOSAPI extends EventEmitter {
 
     /**
      * Host to connect
@@ -94,12 +95,15 @@ export class RouterOSAPI {
      */
     private connectionHoldInterval: NodeJS.Timer;
 
+    private errorCallback: (e: Error) => void;
+
     /**
      * Constructor, also sets the language of the thrown errors
      * 
      * @param {Object} options 
      */
     constructor(options: IRosOptions) {
+        super();
         this.host      = options.host;
         this.user      = options.user;
         this.password  = options.password;
@@ -142,12 +146,24 @@ export class RouterOSAPI {
         });
 
         return new Promise((resolve, reject) => {
+            let errorListener;
+            let timeoutListener;
+
             this.connector.once('connected', () => {
                 this.login().then(() => {
                     this.connecting = false;
                     this.connected = true;
+
+                    this.connector.removeListener('error', errorListener);
+                    this.connector.removeListener('timeout', timeoutListener);
+
+                    this.connector.once('error', (e: Error) => this.emit('error', e));
+                    this.connector.once('timeout', (e: Error) => this.emit('error', e));
+
                     if (this.keepalive) this.keepaliveBy('#');
+
                     info('Logged in on %s', this.host);
+
                     resolve(this);
                 }).catch((e: Error) => {
                     this.connecting = false;
@@ -155,8 +171,9 @@ export class RouterOSAPI {
                     reject(e);
                 });
             });
-            this.connector.once('error', (e: Error) => reject(e));
-            this.connector.once('timeout', (e: Error) => reject(e));
+
+            errorListener = this.connector.once('error', (e: Error) => reject(e));
+            timeoutListener = this.connector.once('timeout', (e: Error) => reject(e));
 
             this.connector.connect();
         });
