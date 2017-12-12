@@ -146,8 +146,11 @@ export class RouterOSAPI extends EventEmitter {
         });
 
         return new Promise((resolve, reject) => {
-            let errorListener;
-            let timeoutListener;
+            const errorListener = (e: Error) => reject(e);
+            const timeoutListener = (e: Error) => reject(e);
+
+            this.connector.once('error', errorListener);
+            this.connector.once('timeout', timeoutListener);
 
             this.connector.once('connected', () => {
                 this.login().then(() => {
@@ -171,9 +174,6 @@ export class RouterOSAPI extends EventEmitter {
                     reject(e);
                 });
             });
-
-            errorListener = this.connector.once('error', (e: Error) => reject(e));
-            timeoutListener = this.connector.once('timeout', (e: Error) => reject(e));
 
             this.connector.connect();
         });
