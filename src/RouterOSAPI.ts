@@ -132,12 +132,6 @@ export class RouterOSAPI extends EventEmitter {
         this.connecting = true;
         this.connected = false;
 
-        if (this.connector) {
-            info('Already had a connector object, going to purge and recreate it');
-            this.connector.destroy();
-            delete this.connector;
-        }
-
         this.connector = new Connector({
             host   : this.host,
             port   : this.port,
@@ -284,10 +278,18 @@ export class RouterOSAPI extends EventEmitter {
             clearTimeout(this.connectionHoldInterval);
         }
 
+        clearTimeout(this.keptaliveby);
+
         return new Promise((resolve) => {
             this.closing = true;
+            this.connector.once('close', () => {
+                this.connector.destroy();
+                this.connector = null;
+                this.closing = false;
+                this.connected = false;
+                resolve(this);
+            });
             this.connector.close();
-            this.connector.once('close', () => resolve(this));
         });
     }
 

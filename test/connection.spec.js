@@ -79,29 +79,29 @@ describe('RouterOSAPI', function() {
             });
         });
 
-        it('should keep alive for 30 seconds and then close', function(done) {
-            this.timeout(35000);
+        // it('should keep alive for 30 seconds and then close', function(done) {
+        //     this.timeout(35000);
 
-            const conn = new RouterOSAPI({
-                host: config.address,
-                user: config.username,
-                password: config.password,
-                keepalive: true,
-                port: 8728
-            });
+        //     const conn = new RouterOSAPI({
+        //         host: config.address,
+        //         user: config.username,
+        //         password: config.password,
+        //         keepalive: true,
+        //         port: 8728
+        //     });
 
-            conn.connect().then(() => {
-                setTimeout(() => {
-                    conn.close().then(() => {
-                        done();
-                    }).catch((err) => {
-                        done(err);
-                    });
-                }, 30000);
-            }).catch((err) => {
-                done(err);
-            });
-        });
+        //     conn.connect().then(() => {
+        //         setTimeout(() => {
+        //             conn.close().then(() => {
+        //                 done();
+        //             }).catch((err) => {
+        //                 done(err);
+        //             });
+        //         }, 30000);
+        //     }).catch((err) => {
+        //         done(err);
+        //     });
+        // });
 
         it('should give a timeout error after connecting', function(done) {
             this.timeout(6000);
@@ -123,6 +123,28 @@ describe('RouterOSAPI', function() {
                 e.should.have.property("message");
                 done();
             });
+        });
+
+        it('should reconnect with the same object', function (done) {
+            const conn = new RouterOSAPI({
+                host: config.address,
+                user: config.username,
+                password: config.password,
+                timeout: 4
+            });
+
+            conn.connect().then(() => {
+                return conn.close();
+            }).then(() => {
+                return conn.connect();
+            }).then(() => {
+                return conn.close();
+            }).then(() => {
+                done();
+            }).catch((err) => {
+                done(err);
+            });
+
         });
 
     });
