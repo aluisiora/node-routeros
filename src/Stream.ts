@@ -73,9 +73,6 @@ export class Stream extends EventEmitter {
         this.params   = params;
         this.callback = callback;
 
-        this.channel.on('close', () => { this.stopped = false; });
-        this.channel.on('stream', this.onStream.bind(this));
-
         this.start();
     }
 
@@ -176,6 +173,9 @@ export class Stream extends EventEmitter {
      */
     private start(): void {
         if (!this.stopped && !this.stopping) {
+            this.channel.on('close', () => { this.stopped = false; });
+            this.channel.on('stream', this.onStream.bind(this));
+
             this.channel.write(this.params.slice(), true)
                 .then(this.onDone.bind(this))
                 .catch(this.onTrap.bind(this));

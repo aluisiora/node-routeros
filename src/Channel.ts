@@ -86,12 +86,8 @@ export class Channel extends EventEmitter {
         this.on('data', (packet: object) => this.data.push(packet));
 
         return new Promise((resolve, reject) => {
-            this.once('done', (data) => {
-                resolve(data);
-            });
-            this.once('trap', (data) => {
-                reject(new Error(data.message));
-            });
+            this.once('done', (data) => resolve(data));
+            this.once('trap', (data) => reject(new Error(data.message)));
 
             this.readAndWrite(params);
         });
