@@ -61,6 +61,22 @@ export class Stream extends EventEmitter {
     private stopped: boolean   = false;
 
     /**
+     * Save the current section of the packet, if has any
+     */
+    private currentSection: string = null;
+
+    /**
+     * Store the current section in a single
+     * array before sending when another section comes
+     */
+    private currentSectionPacket: any[] = [];
+
+    /**
+     * Waiting timeout before sending received section packets
+     */
+    private sectionPacketSendingTimeout: NodeJS.Timer;
+
+    /**
      * Constructor, it also starts the streaming after construction
      * 
      * @param {Channel} channel
@@ -189,7 +205,18 @@ export class Stream extends EventEmitter {
      * @returns {function}
      */
     private onStream(packet: any): void {
-        if (this.callback) this.callback(null, packet, this);
+        if (this.callback) {
+            if (packet['.section']) {
+                if (this.currentSectionPacket.length > 0 && packet['.section'] !== this.currentSection) {
+                    this.callback(null, this.currentSectionPacket.slice(), this);
+                    this.currentSectionPacket = [];
+                }
+                this.currentSection = packet['.section'];
+                this.currentSectionPacket.push(packet);
+            } else {
+                this.callback(null, packet, this);
+            }
+        }
     }
 
     /**
