@@ -104,12 +104,21 @@ export class RouterOSAPI extends EventEmitter {
      */
     constructor(options: IRosOptions) {
         super();
-        this.host      = options.host;
-        this.user      = options.user;
-        this.password  = options.password;
-        this.port      = options.port || 8728;
-        this.timeout   = options.timeout || 10;
-        this.tls       = options.tls;
+        this.setOptions(options);
+    }
+
+    /**
+     * Set connection options, affects before connecting
+     * 
+     * @param options connection options
+     */
+    public setOptions(options: IRosOptions): void {
+        this.host = options.host;
+        this.user = options.user;
+        this.password = options.password;
+        this.port = options.port || 8728;
+        this.timeout = options.timeout || 10;
+        this.tls = options.tls;
         this.keepalive = options.keepalive || false;
         if (options.locale && options.locale !== 'en') {
             i18n.changeLanguage(options.locale, (err?: Error) => {
