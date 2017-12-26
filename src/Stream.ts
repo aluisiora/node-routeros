@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { Channel } from './Channel';
 import { RosException } from './RosException';
 import * as debug from 'debug';
+import { setTimeout, clearTimeout } from 'timers';
 
 const info = debug('routeros-api:stream:info');
 const error = debug('routeros-api:stream:error');
@@ -207,10 +208,20 @@ export class Stream extends EventEmitter {
     private onStream(packet: any): void {
         if (this.callback) {
             if (packet['.section']) {
-                if (this.currentSectionPacket.length > 0 && packet['.section'] !== this.currentSection) {
+                clearTimeout(this.sectionPacketSendingTimeout);
+
+                const sendData = () => {
                     this.callback(null, this.currentSectionPacket.slice(), this);
                     this.currentSectionPacket = [];
+                };
+                
+                this.sectionPacketSendingTimeout = setTimeout(sendData.bind(this), 300);
+
+                if (this.currentSectionPacket.length > 0 && packet['.section'] !== this.currentSection) {
+                    clearTimeout(this.sectionPacketSendingTimeout);
+                    sendData();
                 }
+
                 this.currentSection = packet['.section'];
                 this.currentSectionPacket.push(packet);
             } else {
