@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { Channel } from './Channel';
 import { RosException } from './RosException';
 import * as debug from 'debug';
+import { setTimeout, clearTimeout } from 'timers';
 
 const info = debug('routeros-api:stream:info');
 const error = debug('routeros-api:stream:error');
@@ -61,6 +62,22 @@ export class Stream extends EventEmitter {
     private stopped: boolean   = false;
 
     /**
+     * Save the current section of the packet, if has any
+     */
+    private currentSection: string = null;
+
+    /**
+     * Store the current section in a single
+     * array before sending when another section comes
+     */
+    private currentSectionPacket: any[] = [];
+
+    /**
+     * Waiting timeout before sending received section packets
+     */
+    private sectionPacketSendingTimeout: NodeJS.Timer;
+
+    /**
      * Constructor, it also starts the streaming after construction
      * 
      * @param {Channel} channel
@@ -72,9 +89,6 @@ export class Stream extends EventEmitter {
         this.channel  = channel;
         this.params   = params;
         this.callback = callback;
-
-        this.channel.on('close', () => { this.stopped = false; });
-        this.channel.on('stream', this.onStream.bind(this));
 
         this.start();
     }
@@ -176,6 +190,9 @@ export class Stream extends EventEmitter {
      */
     private start(): void {
         if (!this.stopped && !this.stopping) {
+            this.channel.on('close', () => { this.stopped = false; });
+            this.channel.on('stream', this.onStream.bind(this));
+
             this.channel.write(this.params.slice(), true)
                 .then(this.onDone.bind(this))
                 .catch(this.onTrap.bind(this));
@@ -189,7 +206,28 @@ export class Stream extends EventEmitter {
      * @returns {function}
      */
     private onStream(packet: any): void {
-        if (this.callback) this.callback(null, packet, this);
+        if (this.callback) {
+            if (packet['.section']) {
+                clearTimeout(this.sectionPacketSendingTimeout);
+
+                const sendData = () => {
+                    this.callback(null, this.currentSectionPacket.slice(), this);
+                    this.currentSectionPacket = [];
+                };
+                
+                this.sectionPacketSendingTimeout = setTimeout(sendData.bind(this), 300);
+
+                if (this.currentSectionPacket.length > 0 && packet['.section'] !== this.currentSection) {
+                    clearTimeout(this.sectionPacketSendingTimeout);
+                    sendData();
+                }
+
+                this.currentSection = packet['.section'];
+                this.currentSectionPacket.push(packet);
+            } else {
+                this.callback(null, packet, this);
+            }
+        }
     }
 
     /**
