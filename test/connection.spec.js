@@ -40,19 +40,20 @@ describe('RouterOSAPI', function() {
         });
 
         it('should reject from unknown host 192.168.88.2', function(done) {
-            this.timeout(5000);
+            this.timeout(10000);
 
             const conn = new RouterOSAPI({
                 host: '192.168.88.2',
                 user: config.user,
-                password: config.password
+                password: config.password,
+                timeout: 5
             });
 
             conn.connect().then(() => {
                 should.fail();
                 done();
             }).catch((err) => {
-                err.errno.should.be.equal('EHOSTUNREACH');
+                err.errno.should.be.oneOf(['EHOSTUNREACH', 'SOCKTMOUT']);
                 done();
             });
         });
