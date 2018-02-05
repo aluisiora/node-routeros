@@ -210,9 +210,11 @@ export class Receiver {
                     }
 
                     if (this.sentencePipe.length === 0) {
-                        if (!line.hadMore) {
+                        if (!line.hadMore && this.currentTag) {
                             info('No more sentences to process, will send data to tag %s', this.currentTag);
                             this.sendTagData(this.currentTag);
+                        } else {
+                            info('No more sentences and no data to send');
                         }
                         this.processingSentencePipe = false;
                     } else {
