@@ -3,7 +3,7 @@ import { Connector } from './connector/Connector';
 import { Channel } from './Channel';
 import { RosException } from './RosException';
 import { IRosOptions } from './IRosOptions';
-import { Stream } from './Stream';
+import { RStream } from './RStream';
 import i18n from './locale';
 import * as crypto from 'crypto';
 import * as debug from 'debug';
@@ -219,16 +219,16 @@ export class RouterOSAPI extends EventEmitter {
      * 
      * @param {string|Array} params 
      * @param {function} callback 
-     * @returns {Stream}
+     * @returns {RStream}
      */
-    public stream(params: string | string[] = [], ...moreParams: any[]): Stream {
+    public stream(params: string | string[] = [], ...moreParams: any[]): RStream {
         let callback = moreParams.pop();
         if (typeof callback !== 'function') {
             if (callback) moreParams.push(callback);
             callback = null;
         }
         params = this.concatParams(params, moreParams);
-        return new Stream(this.openChannel(), params, callback);
+        return new RStream(this.openChannel(), params, callback);
     }
 
     /**

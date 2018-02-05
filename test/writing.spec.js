@@ -1,22 +1,16 @@
 const chai = require('chai');
 const RouterOSAPI = require('../dist').RouterOSAPI;
-const config = {
-    address: '10.62.0.25',
-    username: 'admin',
-    password: 'admin',
-    port: 8728
-};
+const config = require("./config.json");
 
 const should = chai.should();
-// const expect = chai.expect;
 
 describe('RouterOSAPI', function () {
 
     describe('#write()', () => {
 
         const conn = new RouterOSAPI({
-            host: config.address,
-            user: config.username,
+            host: config.host,
+            user: config.user,
             password: config.password
         });
 

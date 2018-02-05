@@ -146,9 +146,9 @@ export class Receiver {
                     const line = this.currentLine;
                     this.currentLine = '';
                     data = data.slice(this.dataLength);
-                    const x = this.decodeLength(data);
-                    this.dataLength = x.lngth;
-                    data = data.slice(x.indx); // get rid of excess buffer
+                    const [index, length] = this.decodeLength(data);
+                    this.dataLength = length;
+                    data = data.slice(index); // get rid of excess buffer
                     if (this.dataLength === 1 && data.equals(Buffer.from(null, 'ascii'))) {
                         this.dataLength = 0;
                         data = data.slice(1); // get rid of excess buffer
@@ -160,9 +160,9 @@ export class Receiver {
                     this.processSentence();
                 }
             } else {
-                const y = this.decodeLength(data);
-                this.dataLength = y.lngth;
-                data = data.slice(y.indx);
+                const [index, length] = this.decodeLength(data);
+                this.dataLength = length;
+                data = data.slice(index);
                 if (this.dataLength === 1 && data.equals(Buffer.from(null, 'ascii'))) {
                     this.dataLength = 0;
                     data = data.slice(1); // get rid of excess buffer
@@ -210,9 +210,11 @@ export class Receiver {
                     }
 
                     if (this.sentencePipe.length === 0) {
-                        if (!line.hadMore) {
+                        if (!line.hadMore && this.currentTag) {
                             info('No more sentences to process, will send data to tag %s', this.currentTag);
                             this.sendTagData(this.currentTag);
+                        } else {
+                            info('No more sentences and no data to send');
                         }
                         this.processingSentencePipe = false;
                     } else {
@@ -262,7 +264,7 @@ export class Receiver {
      * 
      * @param {Buffer} data 
      */
-    private decodeLength(data: Buffer): {indx: number, lngth: number} {
+    private decodeLength(data: Buffer): number[] {
         let len;
         let idx = 0;
         const b = data[idx++];
@@ -291,10 +293,7 @@ export class Receiver {
             len = b;
         }
 
-        return {
-            indx : idx,
-            lngth: len,
-        };
+        return [idx, len];
     }
 
 }

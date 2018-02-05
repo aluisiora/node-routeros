@@ -15,7 +15,7 @@ const error = debug('routeros-api:stream:error');
  * It is also possible to pause/resume/stop generated
  * streams.
  */
-export class Stream extends EventEmitter {
+export class RStream extends EventEmitter {
 
     /**
      * Main channel of the stream
@@ -34,7 +34,7 @@ export class Stream extends EventEmitter {
      * if any, or the packet received from the
      * command
      */
-    private callback: (err: Error, packet?: any, stream?: Stream) => void;
+    private callback: (err: Error, packet?: any, stream?: RStream) => void;
 
     /**
      * If is streaming flag
@@ -84,7 +84,7 @@ export class Stream extends EventEmitter {
      * @param {Array} params 
      * @param {function} callback 
      */
-    constructor(channel: Channel, params: string[], callback?: (err: Error, packet?: any, stream?: Stream) => void) {
+    constructor(channel: Channel, params: string[], callback?: (err: Error, packet?: any, stream?: RStream) => void) {
         super();
         this.channel  = channel;
         this.params   = params;
@@ -101,7 +101,7 @@ export class Stream extends EventEmitter {
      * 
      * @param {function} callback 
      */
-    public data(callback: (err: Error, packet?: any, stream?: Stream) => void): void {
+    public data(callback: (err: Error, packet?: any, stream?: RStream) => void): void {
         this.callback = callback;
     }
 
@@ -129,6 +129,8 @@ export class Stream extends EventEmitter {
      */
     public pause(): Promise<void> {
         if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
+        
+        if (this.pausing || this.paused) return Promise.resolve();
 
         if (this.streaming) {
             this.pausing = true;
@@ -151,7 +153,7 @@ export class Stream extends EventEmitter {
      * @returns {Promise}
      */
     public stop(): Promise<void> {
-        if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
+        if (this.stopped || this.stopping) return Promise.resolve();
 
         if (this.paused) {
             this.streaming = false;
@@ -242,6 +244,7 @@ export class Stream extends EventEmitter {
         if (data.message === 'interrupted') {
             this.streaming = false;
         } else {
+            this.stopped = true;
             if (this.callback) this.callback(new Error(data.message), null, this);
         }
     }
