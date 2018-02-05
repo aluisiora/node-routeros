@@ -10,4 +10,4 @@ export * from './connector/Transmitter';
 export * from './Channel';
 export * from './IRosOptions';
 export * from './RosException';
-export * from './Stream';
+export * from './RStream';
