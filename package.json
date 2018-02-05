@@ -40,7 +40,6 @@
   "dependencies": {
     "debug": "^3.1.0",
     "i18next": "^9.1.0",
-    "i18next-sync-fs-backend": "^1.0.0",
     "iconv-lite": "^0.4.19"
   }
 }
