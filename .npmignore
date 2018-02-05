@@ -12,3 +12,7 @@ Thumbs.db
 
 # Temp files
 temp
+
+# Make the package smaller
+src
+test
