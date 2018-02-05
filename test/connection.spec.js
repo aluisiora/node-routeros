@@ -1,11 +1,6 @@
 const should = require('chai').should;
 const RouterOSAPI = require('../dist/index').RouterOSAPI;
-const config = {
-    address: '10.62.0.25',
-    username: 'admin',
-    password: 'admin',
-    port: 8728
-};
+const config = require("./config.json");
 
 should();
 
@@ -15,8 +10,8 @@ describe('RouterOSAPI', function() {
 
         it('should connect normally on ' + config.address, (done) => {
             const conn = new RouterOSAPI({
-                host: config.address,
-                user: config.username,
+                host: config.host,
+                user: config.user,
                 password: config.password
             });
 
@@ -30,8 +25,8 @@ describe('RouterOSAPI', function() {
 
         it('should reject wrong password', (done) => {
             const conn = new RouterOSAPI({
-                host: config.address,
-                user: config.username,
+                host: config.host,
+                user: config.user,
                 password: 'wrongpass'
             });
 
@@ -49,7 +44,7 @@ describe('RouterOSAPI', function() {
 
             const conn = new RouterOSAPI({
                 host: '192.168.88.2',
-                user: config.username,
+                user: config.user,
                 password: config.password
             });
 
@@ -64,8 +59,8 @@ describe('RouterOSAPI', function() {
 
         it('should refuse connection from port 666', function(done) {
             const conn = new RouterOSAPI({
-                host: config.address,
-                user: config.username,
+                host: config.host,
+                user: config.user,
                 password: config.password,
                 port: 666
             });
@@ -79,36 +74,36 @@ describe('RouterOSAPI', function() {
             });
         });
 
-        // it('should keep alive for 30 seconds and then close', function(done) {
-        //     this.timeout(35000);
+        it('should keep alive for 30 seconds and then close', function(done) {
+            this.timeout(35000);
 
-        //     const conn = new RouterOSAPI({
-        //         host: config.address,
-        //         user: config.username,
-        //         password: config.password,
-        //         keepalive: true,
-        //         port: 8728
-        //     });
+            const conn = new RouterOSAPI({
+                host: config.host,
+                user: config.user,
+                password: config.password,
+                keepalive: true,
+                port: 8728
+            });
 
-        //     conn.connect().then(() => {
-        //         setTimeout(() => {
-        //             conn.close().then(() => {
-        //                 done();
-        //             }).catch((err) => {
-        //                 done(err);
-        //             });
-        //         }, 30000);
-        //     }).catch((err) => {
-        //         done(err);
-        //     });
-        // });
+            conn.connect().then(() => {
+                setTimeout(() => {
+                    conn.close().then(() => {
+                        done();
+                    }).catch((err) => {
+                        done(err);
+                    });
+                }, 30000);
+            }).catch((err) => {
+                done(err);
+            });
+        });
 
         it('should give a timeout error after connecting', function(done) {
             this.timeout(6000);
 
             const conn = new RouterOSAPI({
-                host: config.address,
-                user: config.username,
+                host: config.host,
+                user: config.user,
                 password: config.password,
                 timeout: 4
             });
@@ -127,8 +122,8 @@ describe('RouterOSAPI', function() {
 
         it('should reconnect with the same object', function (done) {
             const conn = new RouterOSAPI({
-                host: config.address,
-                user: config.username,
+                host: config.host,
+                user: config.user,
                 password: config.password,
                 timeout: 4
             });
