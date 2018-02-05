@@ -13,6 +13,9 @@ Thumbs.db
 # Temp files
 temp
 
-# Make the package smaller
+# Libs doesn't need this
+package-lock.json
+
+# Make the package smaller - the source is on the github link
 src
 test
