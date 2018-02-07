@@ -6,6 +6,7 @@
     "ALRDYSTREAMING": "Already streaming",
     "CANTWRTWHLSTRMG": "Cannot write over the same channel that is streaming",
     "ALRDYCLOSNG": "Connection already closing",
+    "ALRDYCONNECTING": "Already connecting",
     "SOCKTMOUT": "Timed out after {{seconds}} seconds",
     "E2BIG": "Argument list too long.",
     "EACCES": "Permission denied.",

@@ -133,7 +133,7 @@ export class RouterOSAPI extends EventEmitter {
      * @returns {Promise}
      */
     public connect(): Promise<RouterOSAPI> {
-        if (this.connecting) return;
+        if (this.connecting) return Promise.reject('ALRDYCONNECTING');
         if (this.connected) return Promise.resolve(this);
 
         info('Connecting on %s', this.host);
