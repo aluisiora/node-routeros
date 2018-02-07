@@ -149,11 +149,14 @@ export class RouterOSAPI extends EventEmitter {
         });
 
         return new Promise((resolve, reject) => {
-            const errorListener = (e: Error) => reject(e);
-            const timeoutListener = (e: Error) => reject(e);
+            const errorListener = (e: Error) => {
+                this.connected = false;
+                this.connecting = false;
+                reject(e);
+            };
 
             this.connector.once('error', errorListener);
-            this.connector.once('timeout', timeoutListener);
+            this.connector.once('timeout', errorListener);
 
             this.connector.once('connected', () => {
                 this.login().then(() => {
@@ -161,10 +164,16 @@ export class RouterOSAPI extends EventEmitter {
                     this.connected = true;
 
                     this.connector.removeListener('error', errorListener);
-                    this.connector.removeListener('timeout', timeoutListener);
+                    this.connector.removeListener('timeout', errorListener);
 
-                    this.connector.once('error', (e: Error) => this.emit('error', e));
-                    this.connector.once('timeout', (e: Error) => this.emit('error', e));
+                    const connectedErrorListener = (e: Error) => {
+                        this.connected = false;
+                        this.connecting = false;
+                        this.emit('error', e);
+                    };
+
+                    this.connector.once('error', connectedErrorListener);
+                    this.connector.once('timeout', connectedErrorListener);
 
                     if (this.keepalive) this.keepaliveBy('#');
 
