@@ -209,7 +209,7 @@ export class Receiver {
                         this.currentPacket.push(line.sentence);
                     }
 
-                    if (this.sentencePipe.length === 0) {
+                    if (this.sentencePipe.length === 0 && this.dataLength === 0) {
                         if (!line.hadMore && this.currentTag) {
                             info('No more sentences to process, will send data to tag %s', this.currentTag);
                             this.sendTagData(this.currentTag);
