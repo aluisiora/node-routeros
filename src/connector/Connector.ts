@@ -5,7 +5,6 @@ import { Receiver } from './Receiver';
 import { Transmitter } from './Transmitter';
 import { RosException } from '../RosException';
 import * as debug from 'debug';
-import i18n from '../locale';
 
 const info = debug('routeros-api:connector:connector:info');
 const error = debug('routeros-api:connector:connector:error');

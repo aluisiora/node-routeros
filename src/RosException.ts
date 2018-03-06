@@ -1,4 +1,4 @@
-import i18n from './locale';
+import messages from './messages';
 
 /**
  * RouterOS Exception Handler
@@ -7,15 +7,27 @@ export class RosException extends Error {
 
     public errno: string;
 
-    constructor(errno: string, params?: any) {
-        // Pass remaining arguments (including vendor specific ones) to parent constructor
-        super(i18n.t(errno, params));
+    constructor(errno: string, extras?: any) {
+        super();
 
         // Maintains proper stack trace for where our error was thrown
-        Error.captureStackTrace(this, RosException);
+        Error.captureStackTrace(this, this.constructor);
+
+        this.name = this.constructor.name;
 
         // Custom debugging information
         this.errno = errno;
+
+        let message = messages[errno];
+
+        if (message) {
+            for (const key in extras) {
+                if (extras.hasOwnProperty(key)) {
+                    message = message.replace(`{{${key}}}`, extras[key]);
+                }
+            }
+            this.message = message;
+        }
     }
 
 }

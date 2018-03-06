@@ -39,7 +39,6 @@
   },
   "dependencies": {
     "debug": "*",
-    "i18next": "*",
     "iconv-lite": "*"
   }
 }
