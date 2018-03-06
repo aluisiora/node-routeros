@@ -8,7 +8,7 @@
     "ALRDYCLOSNG": "Conexão já está sendo fechada",
     "ALRDYCONNECTING": "Já está conectando",
     "SOCKTMOUT": "Tempo esgotado após {{seconds}} segundos",
-    "REFNOTFND": "Referência da regra não encontrada",
+    "REFNOTFND": "Item não encontrado da referência informada",
     "E2BIG": "Lista de argumentos muito longa.",
     "EACCES": "Permissão negada.",
     "EADDRINUSE": "Endereço já em uso.",
