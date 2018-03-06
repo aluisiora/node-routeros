@@ -8,7 +8,7 @@ export default {
     ALRDYCLOSNG: 'Connection already closing',
     ALRDYCONNECTING: 'Already connecting',
     SOCKTMOUT: 'Timed out after {{seconds}} seconds',
-    REFNOTFND: 'Item not found with the reference provided',
+    REFNOTFND: 'Item not found with the reference provided in {{key}}',
     E2BIG: 'Argument list too long.',
     EACCES: 'Permission denied.',
     EADDRINUSE: 'Address already in use.',
