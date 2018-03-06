@@ -4,7 +4,6 @@ import { Channel } from './Channel';
 import { RosException } from './RosException';
 import { IRosOptions } from './IRosOptions';
 import { RStream } from './RStream';
-import i18n from './locale';
 import * as crypto from 'crypto';
 import * as debug from 'debug';
 import { setInterval, clearTimeout } from 'timers';
@@ -120,11 +119,6 @@ export class RouterOSAPI extends EventEmitter {
         this.timeout = options.timeout || 10;
         this.tls = options.tls;
         this.keepalive = options.keepalive || false;
-        if (options.locale && options.locale !== 'en') {
-            i18n.changeLanguage(options.locale, (err?: Error) => {
-                if (err) throw err;
-            });
-        }
     }
 
     /**
@@ -180,7 +174,7 @@ export class RouterOSAPI extends EventEmitter {
                     info('Logged in on %s', this.host);
 
                     resolve(this);
-                }).catch((e: Error) => {
+                }).catch((e: RosException) => {
                     this.connecting = false;
                     this.connected = false;
                     reject(e);
