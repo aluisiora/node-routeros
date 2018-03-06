@@ -3,6 +3,9 @@ This is a Mikrotik Routerboard API written in Typescript for nodejs, can be eith
 
 ### This library will handle the API in a more lowerlevel way, for a simpler to use interface I recommend my [`routeros-client`](https://github.com/aluisiora/routeros-client) for a more "object-oriented" API, which wraps this API. It has a very rich documentation, so please check it out.
 
+# v1.4.0
+* Localization got removed, see release patch note.
+
 # Features
  * Connection and reconnection without destroying the object.
  * Change host, username and other parameters of the object without recreating it.
@@ -11,7 +14,6 @@ This is a Mikrotik Routerboard API written in Typescript for nodejs, can be eith
  * Every command is async, but can be synced using the promises features.
  * Can pause, resume and stop streams (like what you get from /tool/torch).
  * Support languages with accents, keeping it consistent throughout winbox and api.
- * Support multiple languages for throwing errors. (Currently only brazilian portuguese and english)
 
 # Installing
 
