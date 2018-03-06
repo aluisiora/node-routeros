@@ -12,5 +12,4 @@ export interface IRosOptions {
     timeout?: number;
     tls?: TlsOptions;
     keepalive?: boolean;
-    locale?: string;
 }

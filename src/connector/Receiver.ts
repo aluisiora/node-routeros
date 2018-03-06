@@ -1,7 +1,7 @@
 import { Socket } from 'net';
 import * as iconv from 'iconv-lite';
 import * as debug from 'debug';
-import i18n from '../locale';
+import { RosException } from '../RosException';
 
 const info = debug('routeros-api:connector:receiver:info');
 const error = debug('routeros-api:connector:receiver:error');
@@ -241,7 +241,7 @@ export class Receiver {
             info('Sending to tag %s the packet %O', tag.name, this.currentPacket);
             tag.callback(this.currentPacket);
         } else {
-            throw new Error(i18n.t('UNREGISTEREDTAG'));
+            throw new RosException('UNREGISTEREDTAG');
         }
         this.cleanUp();
     }

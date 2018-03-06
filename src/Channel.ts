@@ -2,7 +2,6 @@ import { EventEmitter } from 'events';
 import { Connector } from './connector/Connector';
 import { RosException } from './RosException';
 import * as debug from 'debug';
-import i18n from './locale';
 
 const info = debug('routeros-api:channel:info');
 const error = debug('routeros-api:channel:error');
@@ -185,7 +184,7 @@ export class Channel extends EventEmitter {
      * @returns {function}
      */
     private onUnknown(reply: string): void {
-        throw new Error(i18n.t('UNKNOWNREPLY', { reply: reply }));
+        throw new RosException('UNKNOWNREPLY', { reply: reply });
     }
 
 }
