@@ -143,22 +143,26 @@ export class RouterOSAPI extends EventEmitter {
         });
 
         return new Promise((resolve, reject) => {
-            const errorListener = (e: Error) => {
+            const endListener = (e?: Error) => {
                 this.connected = false;
                 this.connecting = false;
-                reject(e);
+                if (e) reject(e);
             };
 
-            this.connector.once('error', errorListener);
-            this.connector.once('timeout', errorListener);
+            this.connector.once('error', endListener);
+            this.connector.once('timeout', endListener);
+            this.connector.once('close', () => {
+                endListener();
+                this.emit('close');
+            });
 
             this.connector.once('connected', () => {
                 this.login().then(() => {
                     this.connecting = false;
                     this.connected = true;
 
-                    this.connector.removeListener('error', errorListener);
-                    this.connector.removeListener('timeout', errorListener);
+                    this.connector.removeListener('error', endListener);
+                    this.connector.removeListener('timeout', endListener);
 
                     const connectedErrorListener = (e: Error) => {
                         this.connected = false;
