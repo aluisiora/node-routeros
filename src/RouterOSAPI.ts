@@ -367,7 +367,7 @@ export class RouterOSAPI extends EventEmitter {
             const ret = data[0].ret;
 
             challenge.write(String.fromCharCode(0) + this.password);
-            challenge.write(ret, challengeOffset, ret.length - challengeOffset, 'hex');
+            challenge.write(ret, challengeOffset, ret.length, 'hex');
 
             const resp = '00' + crypto.createHash('MD5').update(challenge).digest('hex');
 
