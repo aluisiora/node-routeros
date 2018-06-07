@@ -8,7 +8,7 @@ describe('RouterOSAPI', function() {
     
     describe('#connect()', () => {
 
-        it('should connect normally on ' + config.address, (done) => {
+        it('should connect normally on ' + config.host, (done) => {
             const conn = new RouterOSAPI({
                 host: config.host,
                 user: config.user,
@@ -56,6 +56,58 @@ describe('RouterOSAPI', function() {
                 err.errno.should.be.oneOf(['EHOSTUNREACH', 'SOCKTMOUT']);
                 done();
             });
+        });
+
+        it('should connect with a password 16 characters or more', function (done) {
+            const conn = new RouterOSAPI({
+                host: config.host,
+                user: config.user,
+                password: config.password
+            });
+
+            let conn2;
+            const testUser = {
+                name: 'testuser',
+                group: 'read',
+                password: 'averybigpassword' 
+                    + 'withespecialcharacters@#$_!' 
+                    + 'andnumbers12345' 
+                    + 'andabighashnonsense'
+                    + 'b5fefe3bb04026ce6f7fa7e89c605c88'
+                    + '729cc9ae543c722240fa310927945545'
+                    + '1516e06d11ba2c3bff36baab21259882'
+                    + 'ff4fcd0cb49fc64558fbb195cf6eb45a'
+            };
+
+            conn.connect()
+                .then(() => {
+                    return conn.write('/user/add', [
+                        '=name=' + testUser.name,
+                        '=group=' + testUser.group,
+                        '=password=' + testUser.password
+                    ]);
+                }).then((data) => {
+                    testUser.id = data[0].ret;
+
+                    conn2 = new RouterOSAPI({
+                        host: config.host,
+                        user: testUser.name,
+                        password: testUser.password
+                    });
+
+                    return conn2.connect();
+                }).then(() => {
+                    return conn2.close();
+                }).then(() => {
+                    return conn.write('/user/remove', [
+                        '=.id=' + testUser.id
+                    ]);
+                }).then(() => {
+                    conn.close();
+                    done();
+                }).catch((err) => {
+                    done(err);
+                });
         });
 
         it('should refuse connection from port 666', function(done) {
