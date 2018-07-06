@@ -73,29 +73,14 @@ export class Connector extends EventEmitter {
     constructor(options: any) {
         super();
 
-        this.socket      = new Socket();
-        this.transmitter = new Transmitter(this.socket);
-        this.receiver    = new Receiver(this.socket);
-
         this.host = options.host;
         if (options.timeout) this.timeout = options.timeout;
         if (options.port) this.port = options.port;
         if (typeof options.tls === 'boolean' && options.tls) options.tls = {};
         if (typeof options.tls === 'object') {
             if (!options.port) this.port = 8729;
-            this.socket = new TLSSocket(this.socket, options.tls);
+            this.tls = options.tls
         }
-
-        this.socket.once('connect', this.onConnect.bind(this));
-        this.socket.once('end', this.onEnd.bind(this));
-        this.socket.once('timeout', this.onTimeout.bind(this));
-        this.socket.once('fatal', this.onEnd.bind(this));
-
-        this.socket.on('error', this.onError.bind(this));
-        this.socket.on('data', this.onData.bind(this));
-
-        this.socket.setTimeout(this.timeout * 1000);
-        this.socket.setKeepAlive(true);
     }
 
     /**
@@ -107,7 +92,27 @@ export class Connector extends EventEmitter {
         if (!this.connected) {
             if (!this.connecting) {
                 this.connecting = true;
-                this.socket.connect(this.port, this.host);
+                if (this.tls) {
+                    this.socket = tls_1.connect(this.port, this.host, this.tls, this.onConnect.bind(this))
+                    this.transmitter = new Transmitter_1.Transmitter(this.socket);
+                    this.receiver = new Receiver_1.Receiver(this.socket);
+                    this.socket.on('data', this.onData.bind(this))
+                    this.socket.on('tlsClientError', this.onError.bind(this))
+                } else {
+                    this.socket = new net_1.Socket();
+                    this.transmitter = new Transmitter_1.Transmitter(this.socket);
+                    this.receiver = new Receiver_1.Receiver(this.socket);
+                    this.socket.once('connect', this.onConnect.bind(this));
+                    this.socket.once('end', this.onEnd.bind(this));
+                    this.socket.once('timeout', this.onTimeout.bind(this));
+                    this.socket.once('fatal', this.onEnd.bind(this));
+                    this.socket.on('error', this.onError.bind(this));
+                    this.socket.on('data', this.onData.bind(this));
+                    this.socket.setTimeout(this.timeout * 1000);
+                    this.socket.setKeepAlive(true);
+
+                    this.socket.connect(this.port, this.host);
+                }
             }
         }
         return this;
