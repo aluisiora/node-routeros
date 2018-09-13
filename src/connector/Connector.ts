@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { Socket } from 'net';
-import { TLSSocket, TlsOptions } from 'tls';
+import * as tls from 'tls';
 import { Receiver } from './Receiver';
 import { Transmitter } from './Transmitter';
 import { RosException } from '../RosException';
@@ -66,6 +66,11 @@ export class Connector extends EventEmitter {
     private closing: boolean = false;
 
     /**
+    * TLS data
+    */
+    private tls: tls.ConnectionOptions;
+
+    /**
      * Constructor which receive the options of the connection
      * 
      * @param {Object} options 
@@ -93,15 +98,15 @@ export class Connector extends EventEmitter {
             if (!this.connecting) {
                 this.connecting = true;
                 if (this.tls) {
-                    this.socket = tls_1.connect(this.port, this.host, this.tls, this.onConnect.bind(this))
-                    this.transmitter = new Transmitter_1.Transmitter(this.socket);
-                    this.receiver = new Receiver_1.Receiver(this.socket);
+                    this.socket = tls.connect(this.port, this.host, this.tls, this.onConnect.bind(this))
+                    this.transmitter = new Transmitter(this.socket);
+                    this.receiver = new Receiver(this.socket);
                     this.socket.on('data', this.onData.bind(this))
                     this.socket.on('tlsClientError', this.onError.bind(this))
                 } else {
-                    this.socket = new net_1.Socket();
-                    this.transmitter = new Transmitter_1.Transmitter(this.socket);
-                    this.receiver = new Receiver_1.Receiver(this.socket);
+                    this.socket = new Socket();
+                    this.transmitter = new Transmitter(this.socket);
+                    this.receiver = new Receiver(this.socket);
                     this.socket.once('connect', this.onConnect.bind(this));
                     this.socket.once('end', this.onEnd.bind(this));
                     this.socket.once('timeout', this.onTimeout.bind(this));
