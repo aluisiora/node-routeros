@@ -66,8 +66,8 @@ export class Connector extends EventEmitter {
     private closing: boolean = false;
 
     /**
-    * TLS data
-    */
+     * TLS data
+     */
     private tls: tls.ConnectionOptions;
 
     /**
@@ -84,7 +84,7 @@ export class Connector extends EventEmitter {
         if (typeof options.tls === 'boolean' && options.tls) options.tls = {};
         if (typeof options.tls === 'object') {
             if (!options.port) this.port = 8729;
-            this.tls = options.tls
+            this.tls = options.tls;
         }
     }
 
@@ -98,11 +98,11 @@ export class Connector extends EventEmitter {
             if (!this.connecting) {
                 this.connecting = true;
                 if (this.tls) {
-                    this.socket = tls.connect(this.port, this.host, this.tls, this.onConnect.bind(this))
+                    this.socket = tls.connect(this.port, this.host, this.tls, this.onConnect.bind(this));
                     this.transmitter = new Transmitter(this.socket);
                     this.receiver = new Receiver(this.socket);
-                    this.socket.on('data', this.onData.bind(this))
-                    this.socket.on('tlsClientError', this.onError.bind(this))
+                    this.socket.on('data', this.onData.bind(this));
+                    this.socket.on('tlsClientError', this.onError.bind(this));
                 } else {
                     this.socket = new Socket();
                     this.transmitter = new Transmitter(this.socket);
