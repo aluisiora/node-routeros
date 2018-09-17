@@ -195,6 +195,24 @@ describe('RouterOSAPI', function() {
 
         });
 
+        it('should connect via SSL normally on ' + config.host, (done) => {
+            const conn = new RouterOSAPI({
+                host: config.host,
+                user: config.user,
+                password: config.password,
+		tls: {
+			rejectUnauthorized: false
+		},
+		port: config.sslPort
+            });
+
+            conn.connect().then(() => {
+                conn.close();
+                done();
+            }).catch((err) => {
+                done(err);
+            });
+        });
     });
 
 });
