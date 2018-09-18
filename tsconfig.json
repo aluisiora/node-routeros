@@ -4,7 +4,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "outDir": "dist",
-    "sourceMap": true,
+    "inlineSourceMap": true,
     "baseUrl": ".",
     "paths": {
       "*": [
@@ -16,6 +16,7 @@
     "src/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "**/*.spec.ts"
   ]
 }

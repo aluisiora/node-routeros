@@ -200,10 +200,10 @@ describe('RouterOSAPI', function() {
                 host: config.host,
                 user: config.user,
                 password: config.password,
-		tls: {
-			rejectUnauthorized: false
-		},
-		port: config.sslPort
+                tls: {
+                    rejectUnauthorized: false
+                },
+                port: config.sslPort
             });
 
             conn.connect().then(() => {

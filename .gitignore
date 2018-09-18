@@ -58,7 +58,7 @@ typings/
 .env
 
 # Ignore built ts files
-dist/**/*
+dist
 
 # Temp files
 temp
