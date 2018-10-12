@@ -200,24 +200,48 @@ export class RouterOSAPI extends EventEmitter {
     public write(params: string | string[], ...moreParams: Array<string|string[]>): Promise<object[]> {
         params = this.concatParams(params, moreParams);
         let chann = this.openChannel();
-        this.channelsOpen++;
+        this.increaseChannelsOpen();
 
-        // If it's the first connection on the pool, hold the connection
-        // to prevent a timeout before receiving a response
-        // if the command takes too long to process by the RouterOS
-        // on the other end
-        if (this.channelsOpen === 1) this.holdConnection();
+        this.holdConnection();
 
-        chann.on('close', () => { 
+        chann.once('close', () => { 
             chann = null; // putting garbage collector to work :]
-            this.channelsOpen--;
-
-            // If the channels count reaches 0
-            // release the hold created so it can
-            // timeout normally
-            if (this.channelsOpen === 0) this.releaseConnectionHold();
+            this.decreaseChannelsOpen();
+            this.releaseConnectionHold();
         });
         return chann.write(params);
+    }
+
+    /**
+     * Writes a command over the socket to the routerboard
+     * on a new channel and return an event of what happens
+     * with the responses. Listen for 'data', 'done', 'trap' and 'close'
+     * events.
+     * 
+     * @param {string|Array} params 
+     * @param {Array<string|string[]>} moreParams
+     * @returns {EventEmitter}
+     */
+    public writeStream(params: string | string[], ...moreParams: Array<string | string[]>): EventEmitter {
+        params = this.concatParams(params, moreParams);
+        let chann = this.openChannel();
+        this.increaseChannelsOpen();
+        this.holdConnection();
+
+        const event = new EventEmitter();
+
+        chann.once('close', () => {
+            chann = null; // putting garbage collector to work :]
+            this.decreaseChannelsOpen();
+            this.releaseConnectionHold();
+            event.emit('close');
+        });
+        chann.on('data', (data) => event.emit('data', data));
+        chann.once('done', (data) => event.emit('done', data));
+        chann.once('trap', (data) => event.emit('trap', data));
+
+        chann.write(params);
+        return event;
     }
 
     /**
@@ -318,12 +342,24 @@ export class RouterOSAPI extends EventEmitter {
         return new Channel(this.connector);
     }
 
+    private increaseChannelsOpen() {
+        this.channelsOpen++;
+    }
+
+    private decreaseChannelsOpen() {
+        this.channelsOpen--;
+    }
+
     /**
      * Holds the connection if keepalive wasn't set
      * so when a channel opens, ensure that we
      * receive a response before a timeout
      */
     private holdConnection() {
+        // If it's not the first connection to open
+        // don't try to hold it again
+        if (this.channelsOpen !== 1) return;
+        
         if (this.connected && !this.holdingConnectionWithKeepalive) {
             if (this.connectionHoldInterval) clearTimeout(this.connectionHoldInterval);
             const holdConnInterval = () => {
@@ -346,6 +382,10 @@ export class RouterOSAPI extends EventEmitter {
      * when waiting for responses from channels open
      */
     private releaseConnectionHold() {
+        // If there are channels still open
+        // don't release the hold
+        if (this.channelsOpen > 0) return;
+
         if (this.connectionHoldInterval) clearTimeout(this.connectionHoldInterval);
     }
 
