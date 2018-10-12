@@ -200,8 +200,6 @@ export class RouterOSAPI extends EventEmitter {
     public write(params: string | string[], ...moreParams: Array<string|string[]>): Promise<object[]> {
         params = this.concatParams(params, moreParams);
         let chann = this.openChannel();
-        this.increaseChannelsOpen();
-
         this.holdConnection();
 
         chann.once('close', () => { 
@@ -225,7 +223,6 @@ export class RouterOSAPI extends EventEmitter {
     public writeStream(params: string | string[], ...moreParams: Array<string | string[]>): EventEmitter {
         params = this.concatParams(params, moreParams);
         let chann = this.openChannel();
-        this.increaseChannelsOpen();
         this.holdConnection();
 
         const event = new EventEmitter();
@@ -259,7 +256,21 @@ export class RouterOSAPI extends EventEmitter {
             callback = null;
         }
         params = this.concatParams(params, moreParams);
-        return new RStream(this.openChannel(), params, callback);
+        const stream = new RStream(this.openChannel(), params, callback);
+
+        stream.on('started', () => {
+            this.holdConnection();
+        });
+
+        stream.on('stopped', () => {
+            this.decreaseChannelsOpen();
+            this.releaseConnectionHold();
+            stream.removeAllListeners();
+        });
+
+        stream.start();
+
+        return stream;
     }
 
     /**
@@ -339,6 +350,7 @@ export class RouterOSAPI extends EventEmitter {
      * @returns {Channel}
      */
     private openChannel(): Channel {
+        this.increaseChannelsOpen();
         return new Channel(this.connector);
     }
 
@@ -364,7 +376,7 @@ export class RouterOSAPI extends EventEmitter {
             if (this.connectionHoldInterval) clearTimeout(this.connectionHoldInterval);
             const holdConnInterval = () => {
                 this.connectionHoldInterval = setTimeout(() => {
-                    let chann = this.openChannel();
+                    let chann = new Channel(this.connector);
                     chann.on('close', () => { chann = null; });
                     chann.write(['#']).then(() => {
                         holdConnInterval();
