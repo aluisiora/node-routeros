@@ -77,19 +77,23 @@ export class Channel extends EventEmitter {
      * @param {Array} params
      * @returns {Promise}
      */
-    public write(params: string[], isStream = false): Promise<object[]> {
+    public write(params: string[], isStream = false, returnPromise = true): Promise<object[]> {
         this.streaming = isStream;
 
         params.push('.tag=' + this.id);
 
-        this.on('data', (packet: object) => this.data.push(packet));
-
-        return new Promise((resolve, reject) => {
-            this.once('done', (data) => resolve(data));
-            this.once('trap', (data) => reject(new Error(data.message)));
-
-            this.readAndWrite(params);
-        });
+        if (returnPromise) {
+            this.on('data', (packet: object) => this.data.push(packet));
+    
+            return new Promise((resolve, reject) => {
+                this.once('done', (data) => resolve(data));
+                this.once('trap', (data) => reject(new Error(data.message)));
+    
+                this.readAndWrite(params);
+            });
+        }
+        this.readAndWrite(params);
+        return;
     }
 
     /**
@@ -135,6 +139,12 @@ export class Channel extends EventEmitter {
 
         const parsed = this.parsePacket(packet);
 
+        if (reply === '!trap') {
+            this.trapped = true;
+            this.emit('trap', parsed);
+            return;
+        }
+
         if (packet.length > 0 && !this.streaming) this.emit('data', parsed);
 
         switch (reply) {
@@ -142,13 +152,8 @@ export class Channel extends EventEmitter {
                 if (this.streaming) this.emit('stream', parsed);
                 break;
             case '!done':
-                if (this.trapped) this.emit('trap', this.data[0]);
-                else this.emit('done', this.data);
+                if (!this.trapped) this.emit('done', this.data);
                 this.close();
-                break;
-            case '!trap':
-                this.trapped = true;
-                this.data = [parsed];
                 break;
             default:
                 this.emit('unknown', reply);

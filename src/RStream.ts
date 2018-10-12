@@ -3,6 +3,7 @@ import { Channel } from './Channel';
 import { RosException } from './RosException';
 import * as debug from 'debug';
 import { setTimeout, clearTimeout } from 'timers';
+import { debounce } from './utils';
 
 const info = debug('routeros-api:stream:info');
 const error = debug('routeros-api:stream:error');
@@ -35,6 +36,12 @@ export class RStream extends EventEmitter {
      * command
      */
     private callback: (err: Error, packet?: any, stream?: RStream) => void;
+
+    /**
+     * The function that will send empty data
+     * unless debounced by real data from the command
+     */
+    private debounceSendingEmptyData: any;
 
     /**
      * If is streaming flag
@@ -90,7 +97,7 @@ export class RStream extends EventEmitter {
         this.params   = params;
         this.callback = callback;
 
-        this.start();
+        this.prepareDebounceEmptyData();
     }
 
     /**
@@ -174,6 +181,7 @@ export class RStream extends EventEmitter {
                 this.stopping = false;
                 this.stopped = true;
             }
+            this.emit('stopped');
             return Promise.resolve();
         }).catch((err: Error) => {
             return Promise.reject(err);
@@ -190,15 +198,45 @@ export class RStream extends EventEmitter {
     /**
      * Write over the connection and start the stream
      */
-    private start(): void {
+    public start(): void {
         if (!this.stopped && !this.stopping) {
-            this.channel.on('close', () => { this.stopped = false; });
-            this.channel.on('stream', this.onStream.bind(this));
+
+            this.channel.on('close', () => {
+                this.stopped = false;
+            });
+
+            this.channel.on('stream', (packet: any) => {
+                this.debounceSendingEmptyData();
+                this.onStream(packet);
+            });
 
             this.channel.write(this.params.slice(), true)
                 .then(this.onDone.bind(this))
                 .catch(this.onTrap.bind(this));
+
+            this.emit('started');
+
+            this.debounceSendingEmptyData();
         }
+    }
+
+    private prepareDebounceEmptyData() {
+        const intervalParam = this.params.find((param) => {
+            return /=interval=/.test(param);
+        });
+
+        let interval = 2000;
+        if (intervalParam) {
+            const val = intervalParam.split('=')[2];
+            interval = parseInt(val, null) * 1000;
+        }
+
+        this.debounceSendingEmptyData = debounce(() => {
+            if (!this.stopped && !this.stopping && !this.paused && !this.pausing) {
+                this.onStream([]);
+                this.debounceSendingEmptyData();
+            }
+        }, interval + 300);
     }
 
     /**
