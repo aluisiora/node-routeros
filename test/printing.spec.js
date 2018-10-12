@@ -50,6 +50,64 @@ describe("RosApiOperations", () => {
 
     });
 
+    it("should get a single user using the writeStream command", (done) => {
+        const chann = conn.writeStream([
+            "/user/print",
+            "?name=admin"
+        ]);
+        chann.on('data', (data) => {
+            expect(data).to.have.a.property('name').and.be.equal('admin');
+        });
+
+        let gotDone = false;
+        let gotTrapped = false;
+
+        chann.once('done', () => {
+            gotDone = true;
+        });
+
+        chann.once('trap', () => {
+            gotTrapped = true;
+        });
+
+        chann.once('close', () => {
+            expect(gotDone).to.be.equal(true);
+            expect(gotTrapped).to.be.equal(false);
+            done();
+        });
+    });
+
+    it("should throw a trap using the writeStream command", (done) => {
+        const chann = conn.writeStream('somethingthatdoesntexist');
+
+        let gotData = 'gotnodata';
+
+        chann.on('data', (data) => {
+            gotData = data;
+        });
+
+        let gotDone = false;
+        let gotTrapped = false;
+        let theTrap = {};
+
+        chann.once('done', () => {
+            gotDone = true;
+        });
+
+        chann.once('trap', (trap) => {
+            theTrap = trap;
+            gotTrapped = true;
+        });
+
+        chann.once('close', () => {
+            expect(gotData).to.be.equal('gotnodata');
+            expect(theTrap).to.have.property('message').and.be.equal('no such command prefix');
+            expect(gotDone).to.be.equal(false);
+            expect(gotTrapped).to.be.equal(true);
+            done();
+        });
+    });
+
     after("should disconnect", (done) => {
         this.timeout = 5000;
 

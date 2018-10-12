@@ -240,7 +240,7 @@ export class RouterOSAPI extends EventEmitter {
         chann.once('done', (data) => event.emit('done', data));
         chann.once('trap', (data) => event.emit('trap', data));
 
-        chann.write(params);
+        chann.write(params, false, false);
         return event;
     }
 
