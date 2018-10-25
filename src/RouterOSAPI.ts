@@ -410,31 +410,45 @@ export class RouterOSAPI extends EventEmitter {
      */
     private login(): Promise<RouterOSAPI> {
         this.connecting = true;
-        info('Sending login to %s, waiting for challenge', this.host);
-        return this.write('/login').then((data: object) => {
-            info('Received challenge on %s, will send credentials. Data: %o', this.host, data);
+        info('Sending 6.43+ login to %s', this.host);
+        return this.write('/login', [`=name=${this.user}`, `=password=${this.password}`]).then((data: any[]) => {
+            if (data.length === 0) {
+                info('6.43+ Credentials accepted on %s, we are connected', this.host);
+                return Promise.resolve(this);
+            } else if (data.length === 1) {
+                info('Received challenge on %s, will send credentials. Data: %o', this.host, data);
 
-            const challenge = new Buffer(this.password.length + 17);
-            const challengeOffset = this.password.length + 1;
-            const ret = data[0].ret;
+                const challenge = new Buffer(this.password.length + 17);
+                const challengeOffset = this.password.length + 1;
+                const ret = data[0].ret;
 
-            challenge.write(String.fromCharCode(0) + this.password);
-            challenge.write(ret, challengeOffset, ret.length, 'hex');
+                challenge.write(String.fromCharCode(0) + this.password);
+                challenge.write(ret, challengeOffset, ret.length, 'hex');
 
-            const resp = '00' + crypto.createHash('MD5').update(challenge).digest('hex');
+                const resp = '00' + crypto.createHash('MD5').update(challenge).digest('hex');
 
-            return this.write('/login', ['=name=' + this.user, '=response=' + resp]);
-        }).then(() => {
-            info('Credentials accepted on %s, we are connected', this.host);
-            return Promise.resolve(this);
+                return this.write('/login', ['=name=' + this.user, '=response=' + resp]).then(() => {
+                    info('Credentials accepted on %s, we are connected', this.host);
+                    return Promise.resolve(this);
+                }).catch((err: Error) => {
+                    if ((err.message === 'cannot log in') || (err.message === 'invalid user name or password (6)')) {
+                        err = new RosException('CANTLOGIN');
+                    }
+                    this.connector.destroy();
+                    error('Couldn\'t loggin onto %s, Error: %O', this.host, err);
+                    return Promise.reject(err);
+                });
+            }
+            error('Unknown return from /login command on %s, data returned: %O', this.host, data);
+            Promise.reject(new RosException('CANTLOGIN'));
         }).catch((err: Error) => {
-            if (err.message === 'cannot log in') {
+            if ((err.message === 'cannot log in') || (err.message === 'invalid user name or password (6)')) {
                 err = new RosException('CANTLOGIN');
             }
             this.connector.destroy();
             error('Couldn\'t loggin onto %s, Error: %O', this.host, err);
             return Promise.reject(err);
-        });
+        });            
     }
 
     private concatParams(firstParameter: string | string[], parameters: any[]) {
