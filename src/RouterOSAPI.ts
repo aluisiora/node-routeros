@@ -418,7 +418,7 @@ export class RouterOSAPI extends EventEmitter {
             } else if (data.length === 1) {
                 info('Received challenge on %s, will send credentials. Data: %o', this.host, data);
 
-                const challenge = new Buffer(this.password.length + 17);
+                const challenge = Buffer.alloc(this.password.length + 17);
                 const challengeOffset = this.password.length + 1;
                 const ret = data[0].ret;
 
