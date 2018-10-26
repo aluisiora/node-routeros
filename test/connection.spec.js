@@ -201,7 +201,8 @@ describe('RouterOSAPI', function() {
                 user: config.user,
                 password: config.password,
                 tls: {
-                    rejectUnauthorized: false
+                    rejectUnauthorized: false,
+                    ciphers: 'ADH-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384'
                 },
                 port: config.sslPort
             });
