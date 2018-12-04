@@ -5,10 +5,10 @@
   "main": "./dist/index",
   "types": "./dist/index",
   "scripts": {
-    "prepublishOnly": "rm -rf ./dist && tsc",
+    "prepublishOnly": "rimraf ./dist && tsc",
     "test": "ENV=testing mocha",
-    "tsc:build": "rm -rf ./dist && tsc",
-    "tsc:build:watch": "rm -rf ./dist && tsc -w"
+    "tsc:build": "rimraf ./dist && tsc",
+    "tsc:build:watch": "rimraf ./dist && tsc -w"
   },
   "repository": {
     "type": "git",
@@ -18,11 +18,8 @@
     "routeros",
     "routerboard",
     "mikrotik",
-    "javascript",
-    "routerboard-api",
     "typescript",
-    "node",
-    "nodejs"
+    "node"
   ],
   "author": "Aluisio Rodrigues Amaral",
   "license": "MIT",
@@ -33,6 +30,7 @@
     "@types/node": "^6.0.96",
     "chai": "^4.1.2",
     "mocha": "^4.1.0",
+    "rimraf": "^2.6.2",
     "source-map-support": "^0.5.3",
     "tslint": "^5.9.1",
     "typescript": "^2.7.1"
