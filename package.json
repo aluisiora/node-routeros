@@ -1,42 +1,42 @@
 {
-  "name": "node-routeros",
-  "version": "1.5.2",
-  "description": "Mikrotik Routerboard RouterOS API for NodeJS",
-  "main": "./dist/index",
-  "types": "./dist/index",
-  "scripts": {
-    "prepublishOnly": "rimraf ./dist && tsc",
-    "test": "ENV=testing mocha",
-    "tsc:build": "rimraf ./dist && tsc",
-    "tsc:build:watch": "rimraf ./dist && tsc -w"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:aluisiora/node-routeros.git"
-  },
-  "keywords": [
-    "routeros",
-    "routerboard",
-    "mikrotik",
-    "typescript",
-    "node"
-  ],
-  "author": "Aluisio Rodrigues Amaral",
-  "license": "MIT",
-  "devDependencies": {
-    "@types/debug": "0.0.30",
-    "@types/i18next": "^8.4.3",
-    "@types/iconv-lite": "0.0.1",
-    "@types/node": "^6.0.96",
-    "chai": "^4.1.2",
-    "mocha": "^4.1.0",
-    "rimraf": "^2.6.2",
-    "source-map-support": "^0.5.3",
-    "tslint": "^5.9.1",
-    "typescript": "^2.7.1"
-  },
-  "dependencies": {
-    "debug": "*",
-    "iconv-lite": "*"
-  }
+    "name": "node-routeros",
+    "version": "1.5.2",
+    "description": "Mikrotik Routerboard RouterOS API for NodeJS",
+    "main": "./dist/index",
+    "types": "./dist/index",
+    "scripts": {
+        "prepublishOnly": "rimraf ./dist && tsc",
+        "test": "rimraf ./dist && tsc && ENV=testing mocha",
+        "tsc:build": "rimraf ./dist && tsc",
+        "tsc:build:watch": "rimraf ./dist && tsc -w"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:aluisiora/node-routeros.git"
+    },
+    "keywords": [
+        "routeros",
+        "routerboard",
+        "mikrotik",
+        "typescript",
+        "node"
+    ],
+    "author": "Aluisio Rodrigues Amaral",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/debug": "0.0.30",
+        "@types/i18next": "^8.4.3",
+        "@types/iconv-lite": "0.0.1",
+        "@types/node": "^6.0.96",
+        "chai": "^4.1.2",
+        "mocha": "^4.1.0",
+        "rimraf": "^2.6.2",
+        "source-map-support": "^0.5.3",
+        "tslint": "^5.9.1",
+        "typescript": "^2.7.1"
+    },
+    "dependencies": {
+        "debug": "*",
+        "iconv-lite": "*"
+    }
 }

@@ -1,5 +1,5 @@
 {
-    "host": "192.168.88.1",
+    "host": "127.0.0.1",
     "user": "admin",
     "password": "admin",
     "sslPort": 8729

@@ -1,12 +1,8 @@
 import { EventEmitter } from 'events';
 import { Channel } from './Channel';
 import { RosException } from './RosException';
-import * as debug from 'debug';
 import { setTimeout, clearTimeout } from 'timers';
 import { debounce } from './utils';
-
-const info = debug('routeros-api:stream:info');
-const error = debug('routeros-api:stream:error');
 
 /**
  * Stream class is responsible for handling
@@ -17,7 +13,6 @@ const error = debug('routeros-api:stream:error');
  * streams.
  */
 export class RStream extends EventEmitter {
-
     /**
      * Main channel of the stream
      */
@@ -51,27 +46,34 @@ export class RStream extends EventEmitter {
     /**
      * If is pausing flag
      */
-    private pausing: boolean   = false;
+    private pausing: boolean = false;
 
     /**
      * If is paused flag
      */
-    private paused: boolean    = false;
+    private paused: boolean = false;
 
     /**
      * If is stopping flag
      */
-    private stopping: boolean  = false;
+    private stopping: boolean = false;
 
     /**
      * If is stopped flag
      */
-    private stopped: boolean   = false;
+    private stopped: boolean = false;
+
+    /**
+     * If got a trap error
+     */
+    private trapped: boolean = false;
 
     /**
      * Save the current section of the packet, if has any
      */
     private currentSection: string = null;
+
+    private forcelyStop: boolean = false;
 
     /**
      * Store the current section in a single
@@ -86,18 +88,16 @@ export class RStream extends EventEmitter {
 
     /**
      * Constructor, it also starts the streaming after construction
-     * 
+     *
      * @param {Channel} channel
-     * @param {Array} params 
-     * @param {function} callback 
+     * @param {Array} params
+     * @param {function} callback
      */
     constructor(channel: Channel, params: string[], callback?: (err: Error, packet?: any, stream?: RStream) => void) {
         super();
-        this.channel  = channel;
-        this.params   = params;
+        this.channel = channel;
+        this.params = params;
         this.callback = callback;
-
-        this.prepareDebounceEmptyData();
     }
 
     /**
@@ -105,8 +105,8 @@ export class RStream extends EventEmitter {
      * will receive data, if not provided over the
      * constructor or changed later after the streaming
      * have started.
-     * 
-     * @param {function} callback 
+     *
+     * @param {function} callback
      */
     public data(callback: (err: Error, packet?: any, stream?: RStream) => void): void {
         this.callback = callback;
@@ -114,7 +114,7 @@ export class RStream extends EventEmitter {
 
     /**
      * Resume the paused stream, using the same channel
-     * 
+     *
      * @returns {Promise}
      */
     public resume(): Promise<void> {
@@ -131,23 +131,25 @@ export class RStream extends EventEmitter {
 
     /**
      * Pause the stream, but don't destroy the channel
-     * 
+     *
      * @returns {Promise}
      */
     public pause(): Promise<void> {
         if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
-        
+
         if (this.pausing || this.paused) return Promise.resolve();
 
         if (this.streaming) {
             this.pausing = true;
-            return this.stop().then(() => {
-                this.pausing = false;
-                this.paused = true;
-                return Promise.resolve();
-            }).catch((err) => {
-                return Promise.reject(err);
-            });
+            return this.stop(true)
+                .then(() => {
+                    this.pausing = false;
+                    this.paused = true;
+                    return Promise.resolve();
+                })
+                .catch((err) => {
+                    return Promise.reject(err);
+                });
         }
 
         return Promise.resolve();
@@ -156,11 +158,13 @@ export class RStream extends EventEmitter {
     /**
      * Stop the stream entirely, can't re-stream after
      * this if called directly.
-     * 
+     *
      * @returns {Promise}
      */
-    public stop(): Promise<void> {
+    public stop(pausing: boolean = false): Promise<void> {
         if (this.stopped || this.stopping) return Promise.resolve();
+
+        if (!pausing) this.forcelyStop = true;
 
         if (this.paused) {
             this.streaming = false;
@@ -173,19 +177,24 @@ export class RStream extends EventEmitter {
         if (!this.pausing) this.stopping = true;
 
         let chann = new Channel(this.channel.Connector);
-        chann.on('close', () => { chann = null; });
-
-        return chann.write(['/cancel', '=tag=' + this.channel.Id]).then(() => {
-            this.streaming = false;
-            if (!this.pausing) {
-                this.stopping = false;
-                this.stopped = true;
-            }
-            this.emit('stopped');
-            return Promise.resolve();
-        }).catch((err: Error) => {
-            return Promise.reject(err);
+        chann.on('close', () => {
+            chann = null;
         });
+
+        return chann
+            .write(['/cancel', '=tag=' + this.channel.Id])
+            .then(() => {
+                this.streaming = false;
+                if (!this.pausing) {
+                    this.stopping = false;
+                    this.stopped = true;
+                }
+                this.emit('stopped');
+                return Promise.resolve();
+            })
+            .catch((err: Error) => {
+                return Promise.reject(err);
+            });
     }
 
     /**
@@ -200,27 +209,31 @@ export class RStream extends EventEmitter {
      */
     public start(): void {
         if (!this.stopped && !this.stopping) {
-
             this.channel.on('close', () => {
+                if (this.forcelyStop || (!this.pausing && !this.paused)) {
+                    if (!this.trapped) this.emit('done');
+                    this.emit('close');
+                }
                 this.stopped = false;
             });
 
             this.channel.on('stream', (packet: any) => {
-                this.debounceSendingEmptyData();
+                if (this.debounceSendingEmptyData) this.debounceSendingEmptyData();
                 this.onStream(packet);
             });
 
-            this.channel.write(this.params.slice(), true)
-                .then(this.onDone.bind(this))
-                .catch(this.onTrap.bind(this));
+            this.channel.once('trap', this.onTrap.bind(this));
+            this.channel.once('done', this.onDone.bind(this));
+
+            this.channel.write(this.params.slice(), true, false);
 
             this.emit('started');
 
-            this.debounceSendingEmptyData();
+            if (this.debounceSendingEmptyData) this.debounceSendingEmptyData();
         }
     }
 
-    private prepareDebounceEmptyData() {
+    public prepareDebounceEmptyData() {
         const intervalParam = this.params.find((param) => {
             return /=interval=/.test(param);
         });
@@ -242,10 +255,11 @@ export class RStream extends EventEmitter {
     /**
      * When receiving the stream packet, give it to
      * the callback
-     * 
+     *
      * @returns {function}
      */
     private onStream(packet: any): void {
+        this.emit('data', packet);
         if (this.callback) {
             if (packet['.section']) {
                 clearTimeout(this.sectionPacketSendingTimeout);
@@ -254,7 +268,7 @@ export class RStream extends EventEmitter {
                     this.callback(null, this.currentSectionPacket.slice(), this);
                     this.currentSectionPacket = [];
                 };
-                
+
                 this.sectionPacketSendingTimeout = setTimeout(sendData.bind(this), 300);
 
                 if (this.currentSectionPacket.length > 0 && packet['.section'] !== this.currentSection) {
@@ -275,7 +289,7 @@ export class RStream extends EventEmitter {
      * when pausing, will receive a 'interrupted' message,
      * this will not be considered as an error but a flag
      * for the pause and resume function
-     * 
+     *
      * @returns {function}
      */
     private onTrap(data: any): void {
@@ -283,7 +297,9 @@ export class RStream extends EventEmitter {
             this.streaming = false;
         } else {
             this.stopped = true;
+            this.trapped = true;
             if (this.callback) this.callback(new Error(data.message), null, this);
+            this.emit('trap', data);
         }
     }
 
@@ -291,7 +307,7 @@ export class RStream extends EventEmitter {
      * When the channel stops sending data.
      * It will close the channel if the
      * intention was stopping it.
-     * 
+     *
      * @returns {function}
      */
     private onDone(): void {
