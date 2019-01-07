@@ -38,6 +38,9 @@ export class RStream extends EventEmitter {
      */
     private debounceSendingEmptyData: any;
 
+    /** Flag for turning on empty data debouncing */
+    private shouldDebounceEmptyData: boolean = false;
+
     /**
      * If is streaming flag
      */
@@ -181,6 +184,8 @@ export class RStream extends EventEmitter {
             chann = null;
         });
 
+        if (this.debounceSendingEmptyData) this.debounceSendingEmptyData.cancel();
+
         return chann
             .write(['/cancel', '=tag=' + this.channel.Id])
             .then(() => {
@@ -218,7 +223,7 @@ export class RStream extends EventEmitter {
             });
 
             this.channel.on('stream', (packet: any) => {
-                if (this.debounceSendingEmptyData) this.debounceSendingEmptyData();
+                if (this.debounceSendingEmptyData) this.debounceSendingEmptyData.run();
                 this.onStream(packet);
             });
 
@@ -229,11 +234,13 @@ export class RStream extends EventEmitter {
 
             this.emit('started');
 
-            if (this.debounceSendingEmptyData) this.debounceSendingEmptyData();
+            if (this.shouldDebounceEmptyData) this.prepareDebounceEmptyData();
         }
     }
 
     public prepareDebounceEmptyData() {
+        this.shouldDebounceEmptyData = true;
+
         const intervalParam = this.params.find((param) => {
             return /=interval=/.test(param);
         });
@@ -245,9 +252,9 @@ export class RStream extends EventEmitter {
         }
 
         this.debounceSendingEmptyData = debounce(() => {
-            if (!this.stopped && !this.stopping && !this.paused && !this.pausing) {
+            if (!this.stopped || !this.stopping || !this.paused || !this.pausing) {
                 this.onStream([]);
-                this.debounceSendingEmptyData();
+                this.debounceSendingEmptyData.run();
             }
         }, interval + 300);
     }
