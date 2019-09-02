@@ -427,10 +427,10 @@ export class RouterOSAPI extends EventEmitter {
 
                     const challenge = Buffer.alloc(this.password.length + 17);
                     const challengeOffset = this.password.length + 1;
-                    const ret = data[0].ret;
+                    const ret = data[0].ret; // here we have 32 chars with hex encoded 16 bytes of challange data
 
                     challenge.write(String.fromCharCode(0) + this.password);
-                    challenge.write(ret, challengeOffset, ret.length, 'hex');
+                    challenge.write(ret, challengeOffset, ret.length / 2 /* to write 32 hec chars to buffer as bytes we need to really write 16 bytes */, 'hex');
 
                     const resp =
                         '00' +
