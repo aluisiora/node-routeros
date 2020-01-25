@@ -149,7 +149,7 @@ export class Receiver {
                     const [index, length] = this.decodeLength(data);
                     this.dataLength = length;
                     data = data.slice(index); // get rid of excess buffer
-                    if (this.dataLength === 1 && data.equals(Buffer.from(null, 'ascii'))) {
+                    if (this.dataLength === 1 && data.equals(Buffer.from('\0', 'ascii'))) {
                         this.dataLength = 0;
                         data = data.slice(1); // get rid of excess buffer
                     }
@@ -163,7 +163,7 @@ export class Receiver {
                 const [index, length] = this.decodeLength(data);
                 this.dataLength = length;
                 data = data.slice(index);
-                if (this.dataLength === 1 && data.equals(Buffer.from(null, 'ascii'))) {
+                if (this.dataLength === 1 && data.equals(Buffer.from('\0', 'ascii'))) {
                     this.dataLength = 0;
                     data = data.slice(1); // get rid of excess buffer
                 }
