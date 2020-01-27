@@ -73,6 +73,9 @@ export class Receiver {
      */
     private currentPacket: string[] = [];
 
+    public crumbs: Buffer;
+
+
     /**
      * Receives the socket so we are able to read
      * the data sent to it, separating each tag
@@ -82,6 +85,7 @@ export class Receiver {
      */
     constructor(socket: Socket) {
         this.socket = socket;
+        this.crumbs = Buffer.alloc(0);
     }
 
     /**
@@ -125,6 +129,13 @@ export class Receiver {
      * @param {Buffer} data 
      */
     public processRawData(data: Buffer): void {
+        this.crumbs = Buffer.concat([this.crumbs, data]);
+
+        if(this.crumbs.length > 1000) {
+            let len = this.crumbs.length;
+            this.crumbs = this.crumbs.slice(len-1000, len);
+        }
+
         while (data.length > 0) {
             if (this.dataLength > 0) {
                 if (data.length <= this.dataLength) {
@@ -193,7 +204,7 @@ export class Receiver {
                         this.socket.emit('fatal');
                         return;
                     }
-    
+
                     info('Processing line %s', line.sentence);
 
                     if (/^\.tag=/.test(line.sentence)) {
@@ -220,14 +231,13 @@ export class Receiver {
                     } else {
                         process();
                     }
-                    
                 } else {
                     this.processingSentencePipe = false;
                 }
 
             };
 
-            process();            
+            process();
         }
     }
 

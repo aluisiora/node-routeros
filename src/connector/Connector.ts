@@ -137,6 +137,10 @@ export class Connector extends EventEmitter {
         return this;
     }
 
+    public dumpCrumbs() {
+        console.log(this.receiver.crumbs.toString('base64'));
+    }
+
     /**
      * Register a tag to receive data
      * 

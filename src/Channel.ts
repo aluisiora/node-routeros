@@ -156,6 +156,7 @@ export class Channel extends EventEmitter {
                 this.close();
                 break;
             default:
+                this.connector.dumpCrumbs();
                 this.emit('unknown', reply);
                 this.close();
                 break;
@@ -189,7 +190,8 @@ export class Channel extends EventEmitter {
      * @returns {function}
      */
     private onUnknown(reply: string): void {
+        this.connector.dumpCrumbs();
+
         throw new RosException('UNKNOWNREPLY', { reply: reply });
     }
-
 }
