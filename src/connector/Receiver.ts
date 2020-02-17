@@ -5,7 +5,7 @@ import { RosException } from '../RosException';
 
 const info = debug('routeros-api:connector:receiver:info');
 const error = debug('routeros-api:connector:receiver:error');
-const nullBuffer = new Buffer([0x00]);
+const nullBuffer = Buffer.from([0x00]);
 
 export interface ISentence {
     sentence: string;
