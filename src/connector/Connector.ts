@@ -103,6 +103,12 @@ export class Connector extends EventEmitter {
                     this.receiver = new Receiver(this.socket);
                     this.socket.on('data', this.onData.bind(this));
                     this.socket.on('tlsClientError', this.onError.bind(this));
+                    this.socket.once('end', this.onEnd.bind(this));
+                    this.socket.once('timeout', this.onTimeout.bind(this));
+                    this.socket.once('fatal', this.onEnd.bind(this));
+                    this.socket.on('error', this.onError.bind(this));
+                    this.socket.setTimeout(this.timeout * 1000);
+                    this.socket.setKeepAlive(true);
                 } else {
                     this.socket = new Socket();
                     this.transmitter = new Transmitter(this.socket);
