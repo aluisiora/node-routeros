@@ -2,7 +2,7 @@
 
 ## 1.6.3 (2019-09-02)
 
-- Handle authentication challenge buffer as 16 bit.
+-   Handle authentication challenge buffer as 16 bit.
 
 ## 1.6.0 (2019-01-02)
 

@@ -1,6 +1,6 @@
 const { Receiver } = require('../dist/connector/Receiver');
 const { Transmitter } = require('../dist/connector/Transmitter');
-const { expect }  = require('chai');
+const { expect } = require('chai');
 
 let rec, trans;
 
@@ -69,8 +69,8 @@ describe('Receiver', () => {
         segments.push(Buffer.from([0x00]));
 
         buff = Buffer.concat([buff.slice(10), ...segments]);
-        const payload_b = buff.slice(0, remaining_len+1);
-        const payload_c = buff.slice(remaining_len+1);
+        const payload_b = buff.slice(0, remaining_len + 1);
+        const payload_c = buff.slice(remaining_len + 1);
 
         rec.read('foobar', (data) => {
             expect(data.length).to.be.equal(2);

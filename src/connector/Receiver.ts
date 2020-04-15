@@ -26,7 +26,6 @@ export interface IReadCallback {
  * data, sending to the readers and listeners
  */
 export class Receiver {
-
     /**
      * The socket which connects to the routerboard
      */
@@ -81,7 +80,6 @@ export class Receiver {
      */
     private lengthDescriptorSegment: Buffer;
 
-
     /**
      * Receives the socket so we are able to read
      * the data sent to it, separating each tag
@@ -105,8 +103,8 @@ export class Receiver {
     public read(tag: string, callback: (packet: string[]) => void): void {
         info('Reader of %s tag is being set', tag);
         this.tags.set(tag, {
-            name   : tag,
-            callback : callback
+            name: tag,
+            callback: callback,
         });
     }
 
@@ -134,22 +132,19 @@ export class Receiver {
      * @param {Buffer} data
      */
     public processRawData(data: Buffer): void {
-        if(this.lengthDescriptorSegment) {
+        if (this.lengthDescriptorSegment) {
             data = Buffer.concat([this.lengthDescriptorSegment, data]);
             this.lengthDescriptorSegment = null;
         }
 
         // Loop through the data we just received
         while (data.length > 0) {
-
             // If this does not contain the beginning of a packet...
             if (this.dataLength > 0) {
-
                 // If the length of the data we have in our buffer
                 // is less than or equal to that reported by the
                 // bytes used to dermine length...
                 if (data.length <= this.dataLength) {
-
                     // Subtract the data we are taking from the length we desire
                     this.dataLength -= data.length;
 
@@ -158,11 +153,10 @@ export class Receiver {
 
                     // If there is no more desired data we want...
                     if (this.dataLength === 0) {
-
                         // Push the data to the sentance
                         this.sentencePipe.push({
                             sentence: this.currentLine,
-                            hadMore: (data.length !== this.dataLength)
+                            hadMore: data.length !== this.dataLength,
                         });
 
                         // process the sentance and clear the line
@@ -174,7 +168,7 @@ export class Receiver {
                     // set of data from the socket
                     break;
 
-                // If we have more data than we desire...
+                    // If we have more data than we desire...
                 } else {
                     // slice off the part that we desire
                     const tmpBuffer = data.slice(0, this.dataLength);
@@ -201,7 +195,7 @@ export class Receiver {
                     // If we do not have enough data to determine
                     // the length... we wait for the next loop
                     // and store the length descriptor segment
-                    if(descriptor_length > data.length) {
+                    if (descriptor_length > data.length) {
                         this.lengthDescriptorSegment = data;
                     }
 
@@ -218,13 +212,13 @@ export class Receiver {
                     }
                     this.sentencePipe.push({
                         sentence: line,
-                        hadMore: (data.length > 0)
+                        hadMore: data.length > 0,
                     });
                     this.processSentence();
                 }
 
-            // This is the beginning of this packet...
-            // This ALWAYS gets run first
+                // This is the beginning of this packet...
+                // This ALWAYS gets run first
             } else {
                 // returns back the start index of the data and the length
                 const [descriptor_length, length] = this.decodeLength(data);
@@ -272,7 +266,10 @@ export class Receiver {
                         this.currentTag = line.sentence.substring(5);
                     } else if (/^!/.test(line.sentence)) {
                         if (this.currentTag) {
-                            info('Received another response, sending current data to tag %s', this.currentTag);
+                            info(
+                                'Received another response, sending current data to tag %s',
+                                this.currentTag,
+                            );
                             this.sendTagData(this.currentTag);
                         }
                         this.currentPacket.push(line.sentence);
@@ -281,9 +278,15 @@ export class Receiver {
                         this.currentPacket.push(line.sentence);
                     }
 
-                    if (this.sentencePipe.length === 0 && this.dataLength === 0) {
+                    if (
+                        this.sentencePipe.length === 0 &&
+                        this.dataLength === 0
+                    ) {
                         if (!line.hadMore && this.currentTag) {
-                            info('No more sentences to process, will send data to tag %s', this.currentTag);
+                            info(
+                                'No more sentences to process, will send data to tag %s',
+                                this.currentTag,
+                            );
                             this.sendTagData(this.currentTag);
                         } else {
                             info('No more sentences and no data to send');
@@ -292,11 +295,9 @@ export class Receiver {
                     } else {
                         process();
                     }
-
                 } else {
                     this.processingSentencePipe = false;
                 }
-
             };
 
             process();
@@ -310,7 +311,11 @@ export class Receiver {
     private sendTagData(currentTag: string): void {
         const tag = this.tags.get(currentTag);
         if (tag) {
-            info('Sending to tag %s the packet %O', tag.name, this.currentPacket);
+            info(
+                'Sending to tag %s the packet %O',
+                tag.name,
+                this.currentPacket,
+            );
             tag.callback(this.currentPacket);
         } else {
             throw new RosException('UNREGISTEREDTAG');
@@ -367,5 +372,4 @@ export class Receiver {
 
         return [idx, len];
     }
-
 }

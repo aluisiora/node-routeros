@@ -4,7 +4,6 @@ import messages from './messages';
  * RouterOS Exception Handler
  */
 export class RosException extends Error {
-
     public errno: string;
 
     constructor(errno: string, extras?: any) {
@@ -29,5 +28,4 @@ export class RosException extends Error {
             this.message = message;
         }
     }
-
 }

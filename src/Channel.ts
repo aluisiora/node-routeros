@@ -13,7 +13,6 @@ const error = debug('routeros-api:channel:error');
  * their responses
  */
 export class Channel extends EventEmitter {
-
     /**
      * Id of the channel
      */
@@ -41,8 +40,8 @@ export class Channel extends EventEmitter {
 
     /**
      * Constructor
-     * 
-     * @param {Connector} connector 
+     *
+     * @param {Connector} connector
      */
     constructor(connector) {
         super();
@@ -53,7 +52,7 @@ export class Channel extends EventEmitter {
 
     /**
      * Get the id of the channel
-     * 
+     *
      * @returns {string}
      */
     get Id(): string {
@@ -62,7 +61,7 @@ export class Channel extends EventEmitter {
 
     /**
      * Get the connector used in the channel
-     * 
+     *
      * @returns {Connector}
      */
     get Connector(): Connector {
@@ -73,22 +72,26 @@ export class Channel extends EventEmitter {
      * Organize the data to be written over the socket with the id
      * generated. Adds a reader to the id provided, so we wait for
      * the data.
-     * 
+     *
      * @param {Array} params
      * @returns {Promise}
      */
-    public write(params: string[], isStream = false, returnPromise = true): Promise<object[]> {
+    public write(
+        params: string[],
+        isStream = false,
+        returnPromise = true,
+    ): Promise<object[]> {
         this.streaming = isStream;
 
         params.push('.tag=' + this.id);
 
         if (returnPromise) {
             this.on('data', (packet: object) => this.data.push(packet));
-    
+
             return new Promise((resolve, reject) => {
                 this.once('done', (data) => resolve(data));
                 this.once('trap', (data) => reject(new Error(data.message)));
-    
+
                 this.readAndWrite(params);
             });
         }
@@ -101,7 +104,7 @@ export class Channel extends EventEmitter {
      * the connector to remove the reader.
      * If streaming, not forcing will only stop
      * the reader, not the listeners of the events
-     * 
+     *
      * @param {boolean} force - force closing by removing all listeners
      */
     public close(force = false): void {
@@ -115,11 +118,13 @@ export class Channel extends EventEmitter {
     /**
      * Register the reader for the tag and write the params over
      * the socket
-     * 
-     * @param {Array} params 
+     *
+     * @param {Array} params
      */
     private readAndWrite(params: string[]): void {
-        this.connector.read(this.id, (packet: string[]) => this.processPacket(packet));
+        this.connector.read(this.id, (packet: string[]) =>
+            this.processPacket(packet),
+        );
         this.connector.write(params);
     }
 
@@ -129,8 +134,8 @@ export class Channel extends EventEmitter {
      * channel listener, either if it's just
      * the data we were expecting or if
      * a trap was given.
-     * 
-     * @param {Array} packet 
+     *
+     * @param {Array} packet
      */
     private processPacket(packet: string[]): void {
         const reply = packet.shift();
@@ -165,8 +170,8 @@ export class Channel extends EventEmitter {
     /**
      * Parse the packet line, separating the key from the data.
      * Ex: transform '=interface=ether2' into object {interface:'ether2'}
-     * 
-     * @param {Array} packet 
+     *
+     * @param {Array} packet
      * @return {Object}
      */
     private parsePacket(packet: string[]): object {
@@ -184,12 +189,11 @@ export class Channel extends EventEmitter {
      * Waits for the unknown event.
      * It shouldn't happen, but if it does, throws the error and
      * stops the channel
-     * 
+     *
      * @param {string} reply
      * @returns {function}
      */
     private onUnknown(reply: string): void {
         throw new RosException('UNKNOWNREPLY', { reply: reply });
     }
-
 }

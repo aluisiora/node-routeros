@@ -10,7 +10,6 @@ const error = debug('routeros-api:connector:transmitter:error');
  * socket to the routerboard
  */
 export class Transmitter {
-
     /**
      * The socket which connects to the routerboard
      */
@@ -90,20 +89,20 @@ export class Transmitter {
             data[offset++] = len & 0xff;
         } else if (len < 0x200000) {
             data = Buffer.alloc(len + 3);
-            len |= 0xC00000;
+            len |= 0xc00000;
             data[offset++] = (len >> 16) & 0xff;
             data[offset++] = (len >> 8) & 0xff;
             data[offset++] = len & 0xff;
         } else if (len < 0x10000000) {
             data = Buffer.alloc(len + 4);
-            len |= 0xE0000000;
+            len |= 0xe0000000;
             data[offset++] = (len >> 24) & 0xff;
             data[offset++] = (len >> 16) & 0xff;
             data[offset++] = (len >> 8) & 0xff;
             data[offset++] = len & 0xff;
         } else {
             data = Buffer.alloc(len + 5);
-            data[offset++] = 0xF0;
+            data[offset++] = 0xf0;
             data[offset++] = (len >> 24) & 0xff;
             data[offset++] = (len >> 16) & 0xff;
             data[offset++] = (len >> 8) & 0xff;

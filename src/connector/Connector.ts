@@ -12,14 +12,13 @@ const error = debug('routeros-api:connector:connector:error');
 /**
  * Connector class responsible for communicating with
  * the routeros via api, sending and receiving buffers.
- * 
+ *
  * The main focus of this class is to be able to
  * construct and destruct dinamically by the RouterOSAPI class
  * when needed, so the authentication parameters don't
  * need to be changed every time we need to reconnect.
  */
 export class Connector extends EventEmitter {
-
     /**
      * The host or address of where to connect to
      */
@@ -53,7 +52,7 @@ export class Connector extends EventEmitter {
     /**
      * Connected status
      */
-    private connected: boolean  = false;
+    private connected: boolean = false;
 
     /**
      * Connecting status
@@ -72,8 +71,8 @@ export class Connector extends EventEmitter {
 
     /**
      * Constructor which receive the options of the connection
-     * 
-     * @param {Object} options 
+     *
+     * @param {Object} options
      */
     constructor(options: any) {
         super();
@@ -90,7 +89,7 @@ export class Connector extends EventEmitter {
 
     /**
      * Connect to the routerboard
-     * 
+     *
      * @returns {Connector}
      */
     public connect(): Connector {
@@ -98,7 +97,12 @@ export class Connector extends EventEmitter {
             if (!this.connecting) {
                 this.connecting = true;
                 if (this.tls) {
-                    this.socket = tls.connect(this.port, this.host, this.tls, this.onConnect.bind(this));
+                    this.socket = tls.connect(
+                        this.port,
+                        this.host,
+                        this.tls,
+                        this.onConnect.bind(this),
+                    );
                     this.transmitter = new Transmitter(this.socket);
                     this.receiver = new Receiver(this.socket);
                     this.socket.on('data', this.onData.bind(this));
@@ -131,8 +135,8 @@ export class Connector extends EventEmitter {
 
     /**
      * Writes data through the open socket
-     * 
-     * @param {Array} data 
+     *
+     * @param {Array} data
      * @returns {Connector}
      */
     public write(data: string[]): Connector {
@@ -145,9 +149,9 @@ export class Connector extends EventEmitter {
 
     /**
      * Register a tag to receive data
-     * 
-     * @param {string} tag 
-     * @param {function} callback 
+     *
+     * @param {string} tag
+     * @param {function} callback
      */
     public read(tag: string, callback: (packet: string[]) => void): void {
         this.receiver.read(tag, callback);
@@ -155,7 +159,7 @@ export class Connector extends EventEmitter {
 
     /**
      * Unregister a tag, so it no longer waits for data
-     * @param {string} tag 
+     * @param {string} tag
      */
     public stopRead(tag: string): void {
         this.receiver.stop(tag);
@@ -186,7 +190,7 @@ export class Connector extends EventEmitter {
      * After the connection is stablished,
      * ask the transmitter to run any
      * command stored over the pool
-     * 
+     *
      * @returns {function}
      */
     private onConnect(): void {
@@ -201,7 +205,7 @@ export class Connector extends EventEmitter {
      * Socket end event listener.
      * Terminates the connection after
      * the socket is released
-     * 
+     *
      * @returns {function}
      */
     private onEnd(): void {
@@ -213,12 +217,16 @@ export class Connector extends EventEmitter {
      * Socket error event listener.
      * Emmits the error while trying to connect and
      * destroys the socket.
-     * 
+     *
      * @returns {function}
      */
     private onError(err: any): void {
         err = new RosException(err.errno, err);
-        error('Problem while trying to connect to %s. Error: %s', this.host, err.message);
+        error(
+            'Problem while trying to connect to %s. Error: %s',
+            this.host,
+            err.message,
+        );
         this.emit('error', err, this);
         this.destroy();
     }
@@ -226,23 +234,26 @@ export class Connector extends EventEmitter {
     /**
      * Socket timeout event listener
      * Emmits timeout error and destroys the socket
-     * 
+     *
      * @returns {function}
      */
     private onTimeout(): void {
-        this.emit('timeout', new RosException('SOCKTMOUT', { seconds: this.timeout}), this);
-        this.destroy();        
+        this.emit(
+            'timeout',
+            new RosException('SOCKTMOUT', { seconds: this.timeout }),
+            this,
+        );
+        this.destroy();
     }
 
     /**
      * Socket data event listener
      * Receives the data and sends it to processing
-     * 
+     *
      * @returns {function}
      */
     private onData(data: Buffer): void {
         info('Got data from the socket, will process it');
         this.receiver.processRawData(data);
     }
-
 }

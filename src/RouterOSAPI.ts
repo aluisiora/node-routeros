@@ -198,7 +198,10 @@ export class RouterOSAPI extends EventEmitter {
      * @param {Array<string|string[]>} moreParams
      * @returns {Promise}
      */
-    public write(params: string | string[], ...moreParams: Array<string | string[]>): Promise<object[]> {
+    public write(
+        params: string | string[],
+        ...moreParams: Array<string | string[]>
+    ): Promise<object[]> {
         params = this.concatParams(params, moreParams);
         let chann = this.openChannel();
         this.holdConnection();
@@ -221,7 +224,10 @@ export class RouterOSAPI extends EventEmitter {
      * @param {Array<string|string[]>} moreParams
      * @returns {RStream}
      */
-    public writeStream(params: string | string[], ...moreParams: Array<string | string[]>): RStream {
+    public writeStream(
+        params: string | string[],
+        ...moreParams: Array<string | string[]>
+    ): RStream {
         params = this.concatParams(params, moreParams);
         const stream = new RStream(this.openChannel(), params);
 
@@ -247,7 +253,10 @@ export class RouterOSAPI extends EventEmitter {
      * @param {function} callback
      * @returns {RStream}
      */
-    public stream(params: string | string[] = [], ...moreParams: any[]): RStream {
+    public stream(
+        params: string | string[] = [],
+        ...moreParams: any[]
+    ): RStream {
         let callback = moreParams.pop();
         if (typeof callback !== 'function') {
             if (callback) moreParams.push(callback);
@@ -279,7 +288,10 @@ export class RouterOSAPI extends EventEmitter {
      * @param {string|Array} params
      * @param {function} callback
      */
-    public keepaliveBy(params: string | string[] = [], ...moreParams: any[]): void {
+    public keepaliveBy(
+        params: string | string[] = [],
+        ...moreParams: any[]
+    ): void {
         this.holdingConnectionWithKeepalive = true;
 
         if (this.keptaliveby) clearTimeout(this.keptaliveby);
@@ -297,11 +309,13 @@ export class RouterOSAPI extends EventEmitter {
                 this.keptaliveby = setTimeout(() => {
                     this.write(params.slice())
                         .then((data) => {
-                            if (typeof callback === 'function') callback(null, data);
+                            if (typeof callback === 'function')
+                                callback(null, data);
                             exec();
                         })
                         .catch((err: Error) => {
-                            if (typeof callback === 'function') callback(err, null);
+                            if (typeof callback === 'function')
+                                callback(err, null);
                             exec();
                         });
                 }, (this.timeout * 1000) / 2);
@@ -374,7 +388,8 @@ export class RouterOSAPI extends EventEmitter {
         if (this.channelsOpen !== 1) return;
 
         if (this.connected && !this.holdingConnectionWithKeepalive) {
-            if (this.connectionHoldInterval) clearTimeout(this.connectionHoldInterval);
+            if (this.connectionHoldInterval)
+                clearTimeout(this.connectionHoldInterval);
             const holdConnInterval = () => {
                 this.connectionHoldInterval = setTimeout(() => {
                     let chann = new Channel(this.connector);
@@ -404,7 +419,8 @@ export class RouterOSAPI extends EventEmitter {
         // don't release the hold
         if (this.channelsOpen > 0) return;
 
-        if (this.connectionHoldInterval) clearTimeout(this.connectionHoldInterval);
+        if (this.connectionHoldInterval)
+            clearTimeout(this.connectionHoldInterval);
     }
 
     /**
@@ -417,13 +433,23 @@ export class RouterOSAPI extends EventEmitter {
     private login(): Promise<RouterOSAPI> {
         this.connecting = true;
         info('Sending 6.43+ login to %s', this.host);
-        return this.write('/login', [`=name=${this.user}`, `=password=${this.password}`])
+        return this.write('/login', [
+            `=name=${this.user}`,
+            `=password=${this.password}`,
+        ])
             .then((data: any[]) => {
                 if (data.length === 0) {
-                    info('6.43+ Credentials accepted on %s, we are connected', this.host);
+                    info(
+                        '6.43+ Credentials accepted on %s, we are connected',
+                        this.host,
+                    );
                     return Promise.resolve(this);
                 } else if (data.length === 1) {
-                    info('Received challenge on %s, will send credentials. Data: %o', this.host, data);
+                    info(
+                        'Received challenge on %s, will send credentials. Data: %o',
+                        this.host,
+                        data,
+                    );
 
                     const challenge = Buffer.alloc(this.password.length + 17);
                     const challengeOffset = this.password.length + 1;
@@ -434,7 +460,12 @@ export class RouterOSAPI extends EventEmitter {
                     challenge.write(String.fromCharCode(0) + this.password);
 
                     // To write 32 hec chars to buffer as bytes we need to write 16 bytes
-                    challenge.write(ret, challengeOffset, ret.length / 2, 'hex');
+                    challenge.write(
+                        ret,
+                        challengeOffset,
+                        ret.length / 2,
+                        'hex',
+                    );
 
                     const resp =
                         '00' +
@@ -443,28 +474,46 @@ export class RouterOSAPI extends EventEmitter {
                             .update(challenge)
                             .digest('hex');
 
-                    return this.write('/login', ['=name=' + this.user, '=response=' + resp])
+                    return this.write('/login', [
+                        '=name=' + this.user,
+                        '=response=' + resp,
+                    ])
                         .then(() => {
-                            info('Credentials accepted on %s, we are connected', this.host);
+                            info(
+                                'Credentials accepted on %s, we are connected',
+                                this.host,
+                            );
                             return Promise.resolve(this);
                         })
                         .catch((err: Error) => {
                             if (
                                 err.message === 'cannot log in' ||
-                                err.message === 'invalid user name or password (6)'
+                                err.message ===
+                                    'invalid user name or password (6)'
                             ) {
                                 err = new RosException('CANTLOGIN');
                             }
                             this.connector.destroy();
-                            error("Couldn't loggin onto %s, Error: %O", this.host, err);
+                            error(
+                                "Couldn't loggin onto %s, Error: %O",
+                                this.host,
+                                err,
+                            );
                             return Promise.reject(err);
                         });
                 }
-                error('Unknown return from /login command on %s, data returned: %O', this.host, data);
+                error(
+                    'Unknown return from /login command on %s, data returned: %O',
+                    this.host,
+                    data,
+                );
                 Promise.reject(new RosException('CANTLOGIN'));
             })
             .catch((err: Error) => {
-                if (err.message === 'cannot log in' || err.message === 'invalid user name or password (6)') {
+                if (
+                    err.message === 'cannot log in' ||
+                    err.message === 'invalid user name or password (6)'
+                ) {
                     err = new RosException('CANTLOGIN');
                 }
                 this.connector.destroy();
@@ -474,10 +523,12 @@ export class RouterOSAPI extends EventEmitter {
     }
 
     private concatParams(firstParameter: string | string[], parameters: any[]) {
-        if (typeof firstParameter === 'string') firstParameter = [firstParameter];
+        if (typeof firstParameter === 'string')
+            firstParameter = [firstParameter];
         for (let parameter of parameters) {
             if (typeof parameter === 'string') parameter = [parameter];
-            if (parameter.length > 0) firstParameter = firstParameter.concat(parameter);
+            if (parameter.length > 0)
+                firstParameter = firstParameter.concat(parameter);
         }
         return firstParameter;
     }

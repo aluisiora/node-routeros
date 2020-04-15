@@ -96,7 +96,11 @@ export class RStream extends EventEmitter {
      * @param {Array} params
      * @param {function} callback
      */
-    constructor(channel: Channel, params: string[], callback?: (err: Error, packet?: any, stream?: RStream) => void) {
+    constructor(
+        channel: Channel,
+        params: string[],
+        callback?: (err: Error, packet?: any, stream?: RStream) => void,
+    ) {
         super();
         this.channel = channel;
         this.params = params;
@@ -111,7 +115,9 @@ export class RStream extends EventEmitter {
      *
      * @param {function} callback
      */
-    public data(callback: (err: Error, packet?: any, stream?: RStream) => void): void {
+    public data(
+        callback: (err: Error, packet?: any, stream?: RStream) => void,
+    ): void {
         this.callback = callback;
     }
 
@@ -121,7 +127,8 @@ export class RStream extends EventEmitter {
      * @returns {Promise}
      */
     public resume(): Promise<void> {
-        if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
+        if (this.stopped || this.stopping)
+            return Promise.reject(new RosException('STREAMCLOSD'));
 
         if (!this.streaming) {
             this.pausing = false;
@@ -138,7 +145,8 @@ export class RStream extends EventEmitter {
      * @returns {Promise}
      */
     public pause(): Promise<void> {
-        if (this.stopped || this.stopping) return Promise.reject(new RosException('STREAMCLOSD'));
+        if (this.stopped || this.stopping)
+            return Promise.reject(new RosException('STREAMCLOSD'));
 
         if (this.pausing || this.paused) return Promise.resolve();
 
@@ -184,7 +192,8 @@ export class RStream extends EventEmitter {
             chann = null;
         });
 
-        if (this.debounceSendingEmptyData) this.debounceSendingEmptyData.cancel();
+        if (this.debounceSendingEmptyData)
+            this.debounceSendingEmptyData.cancel();
 
         return chann
             .write(['/cancel', '=tag=' + this.channel.Id])
@@ -223,7 +232,8 @@ export class RStream extends EventEmitter {
             });
 
             this.channel.on('stream', (packet: any) => {
-                if (this.debounceSendingEmptyData) this.debounceSendingEmptyData.run();
+                if (this.debounceSendingEmptyData)
+                    this.debounceSendingEmptyData.run();
                 this.onStream(packet);
             });
 
@@ -252,7 +262,12 @@ export class RStream extends EventEmitter {
         }
 
         this.debounceSendingEmptyData = debounce(() => {
-            if (!this.stopped || !this.stopping || !this.paused || !this.pausing) {
+            if (
+                !this.stopped ||
+                !this.stopping ||
+                !this.paused ||
+                !this.pausing
+            ) {
                 this.onStream([]);
                 this.debounceSendingEmptyData.run();
             }
@@ -272,13 +287,23 @@ export class RStream extends EventEmitter {
                 clearTimeout(this.sectionPacketSendingTimeout);
 
                 const sendData = () => {
-                    this.callback(null, this.currentSectionPacket.slice(), this);
+                    this.callback(
+                        null,
+                        this.currentSectionPacket.slice(),
+                        this,
+                    );
                     this.currentSectionPacket = [];
                 };
 
-                this.sectionPacketSendingTimeout = setTimeout(sendData.bind(this), 300);
+                this.sectionPacketSendingTimeout = setTimeout(
+                    sendData.bind(this),
+                    300,
+                );
 
-                if (this.currentSectionPacket.length > 0 && packet['.section'] !== this.currentSection) {
+                if (
+                    this.currentSectionPacket.length > 0 &&
+                    packet['.section'] !== this.currentSection
+                ) {
                     clearTimeout(this.sectionPacketSendingTimeout);
                     sendData();
                 }
@@ -305,7 +330,8 @@ export class RStream extends EventEmitter {
         } else {
             this.stopped = true;
             this.trapped = true;
-            if (this.callback) this.callback(new Error(data.message), null, this);
+            if (this.callback)
+                this.callback(new Error(data.message), null, this);
             this.emit('trap', data);
         }
     }

@@ -1,5 +1,6 @@
 export default {
-    UNREGISTEREDTAG: 'Received data on unregistered tag. This is an error on this API itself and shouldn\'t have happened.',
+    UNREGISTEREDTAG:
+        "Received data on unregistered tag. This is an error on this API itself and shouldn't have happened.",
     UNKNOWNREPLY: 'Tried to process unknown reply: {{reply}}',
     CANTLOGIN: 'Username or password is invalid',
     STREAMCLOSD: 'Streaming is closed',
@@ -128,5 +129,5 @@ export default {
     EUSERS: 'Too many users.',
     EWOULDBLOCK: 'Resource temporarily unavailable.',
     EXDEV: 'Improper link.',
-    EXFULL: 'Exchange full.'
+    EXFULL: 'Exchange full.',
 };
