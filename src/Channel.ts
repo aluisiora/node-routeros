@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { Connector } from './connector/Connector';
 import { RosException } from './RosException';
 import * as debug from 'debug';
+import { IRosGenericResponse } from './IRosGenericResponse';
 
 const info = debug('routeros-api:channel:info');
 const error = debug('routeros-api:channel:error');
@@ -43,7 +44,7 @@ export class Channel extends EventEmitter {
      *
      * @param {Connector} connector
      */
-    constructor(connector) {
+    constructor(connector: Connector) {
         super();
         this.id = Math.random().toString(36).substring(3);
         this.connector = connector;
@@ -80,7 +81,7 @@ export class Channel extends EventEmitter {
         params: string[],
         isStream = false,
         returnPromise = true,
-    ): Promise<object[]> {
+    ): Promise<IRosGenericResponse[]> {
         this.streaming = isStream;
 
         params.push('.tag=' + this.id);

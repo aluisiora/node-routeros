@@ -8,6 +8,7 @@ import * as crypto from 'crypto';
 import * as debug from 'debug';
 import { setInterval, clearTimeout } from 'timers';
 import { EventEmitter } from 'events';
+import { IRosGenericResponse } from './IRosGenericResponse';
 
 const info = debug('routeros-api:api:info');
 const error = debug('routeros-api:api:error');
@@ -201,7 +202,7 @@ export class RouterOSAPI extends EventEmitter {
     public write(
         params: string | string[],
         ...moreParams: Array<string | string[]>
-    ): Promise<object[]> {
+    ): Promise<IRosGenericResponse[]> {
         params = this.concatParams(params, moreParams);
         let chann = this.openChannel();
         this.holdConnection();
