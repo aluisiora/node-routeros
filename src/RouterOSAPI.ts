@@ -6,7 +6,7 @@ import { IRosOptions } from './IRosOptions';
 import { RStream } from './RStream';
 import * as crypto from 'crypto';
 import * as debug from 'debug';
-import { setInterval, clearTimeout } from 'timers';
+import { clearTimeout } from 'timers';
 import { EventEmitter } from 'events';
 import { IRosGenericResponse } from './IRosGenericResponse';
 
@@ -93,8 +93,6 @@ export class RouterOSAPI extends EventEmitter {
      * when waiting for a channel response
      */
     private connectionHoldInterval: NodeJS.Timer;
-
-    private errorCallback: (e: Error) => void;
 
     /**
      * Constructor, also sets the language of the thrown errors
