@@ -94,6 +94,8 @@ export class RouterOSAPI extends EventEmitter {
      */
     private connectionHoldInterval: NodeJS.Timer;
 
+    private registeredStreams: RStream[] = [];
+
     /**
      * Constructor, also sets the language of the thrown errors
      *
@@ -142,6 +144,7 @@ export class RouterOSAPI extends EventEmitter {
 
         return new Promise((resolve, reject) => {
             const endListener = (e?: Error) => {
+                this.stopAllStreams();
                 this.connected = false;
                 this.connecting = false;
                 if (e) reject(e);
@@ -235,11 +238,14 @@ export class RouterOSAPI extends EventEmitter {
         });
 
         stream.on('stopped', () => {
+            this.unregisterStream(stream);
             this.decreaseChannelsOpen();
             this.releaseConnectionHold();
         });
 
         stream.start();
+
+        this.registerStream(stream);
 
         return stream;
     }
@@ -269,6 +275,7 @@ export class RouterOSAPI extends EventEmitter {
         });
 
         stream.on('stopped', () => {
+            this.unregisterStream(stream);
             this.decreaseChannelsOpen();
             this.releaseConnectionHold();
             stream.removeAllListeners();
@@ -276,6 +283,8 @@ export class RouterOSAPI extends EventEmitter {
 
         stream.start();
         stream.prepareDebounceEmptyData();
+
+        this.registerStream(stream);
 
         return stream;
     }
@@ -345,6 +354,8 @@ export class RouterOSAPI extends EventEmitter {
 
         clearTimeout(this.keptaliveby);
 
+        this.stopAllStreams();
+
         return new Promise((resolve) => {
             this.closing = true;
             this.connector.once('close', () => {
@@ -374,6 +385,22 @@ export class RouterOSAPI extends EventEmitter {
 
     private decreaseChannelsOpen() {
         this.channelsOpen--;
+    }
+
+    private registerStream(stream: RStream) {
+        this.registeredStreams.push(stream);
+    }
+
+    private unregisterStream(stream: RStream) {
+        this.registeredStreams = this.registeredStreams.filter(
+            (registeredStreams) => registeredStreams !== stream,
+        );
+    }
+
+    private stopAllStreams() {
+        for (const registeredStream of this.registeredStreams) {
+            registeredStream.stop();
+        }
     }
 
     /**
