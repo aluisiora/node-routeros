@@ -333,6 +333,7 @@ export class RStream extends EventEmitter {
             if (this.callback)
                 this.callback(new Error(data.message), null, this);
             this.emit('trap', data);
+            this.emit('error', data);
         }
     }
 
