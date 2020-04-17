@@ -153,8 +153,8 @@ export class RouterOSAPI extends EventEmitter {
             this.connector.once('error', endListener);
             this.connector.once('timeout', endListener);
             this.connector.once('close', () => {
-                endListener();
                 this.emit('close');
+                endListener();
             });
 
             this.connector.once('connected', () => {

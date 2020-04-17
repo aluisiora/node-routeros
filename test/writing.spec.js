@@ -1,6 +1,6 @@
 const chai = require('chai');
 const RouterOSAPI = require('../dist').RouterOSAPI;
-const config = require('./config.json');
+const config = require('./config');
 
 const should = chai.should();
 

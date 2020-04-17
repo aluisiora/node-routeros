@@ -330,10 +330,12 @@ export class RStream extends EventEmitter {
         } else {
             this.stopped = true;
             this.trapped = true;
-            if (this.callback)
+            if (this.callback) {
                 this.callback(new Error(data.message), null, this);
+            } else {
+                this.emit('error', data);
+            }
             this.emit('trap', data);
-            this.emit('error', data);
         }
     }
 

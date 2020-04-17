@@ -1,6 +1,6 @@
 const RouterOSAPI = require('../dist').RouterOSAPI;
 const chai = require('chai');
-const config = require('./config.json');
+const config = require('./config');
 
 const should = chai.should();
 const expect = chai.expect;
@@ -83,6 +83,7 @@ describe('RosApiOperations', () => {
 
         let gotDone = false;
         let gotTrapped = false;
+        let gotError = false;
         let theTrap = {};
 
         chann.once('done', () => {
@@ -94,6 +95,10 @@ describe('RosApiOperations', () => {
             gotTrapped = true;
         });
 
+        chann.once('error', (trap) => {
+            gotError = true;
+        });
+
         chann.once('close', () => {
             expect(gotData).to.be.equal('gotnodata');
             expect(theTrap)
@@ -101,6 +106,7 @@ describe('RosApiOperations', () => {
                 .and.be.equal('no such command prefix');
             expect(gotDone).to.be.equal(false);
             expect(gotTrapped).to.be.equal(true);
+            expect(gotError).to.be.equal(true);
             done();
         });
     });
